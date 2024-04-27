@@ -107,10 +107,12 @@ def unhooked_sh():
 
     obs.signal_handler_connect(sh, "unhooked", reset_captured_window_title_cb)
 
-def reset_captured_window_title_cb():
-    import debugpy; debugpy.breakpoint()
-    RecordingInfo.GameTitle = "Manual Recording"
-    print("Game title changed: " + RecordingInfo.GameTitle)
+
+def reset_captured_window_title_cb(calldata):
+    if RecordingInfo.isRecording is True:
+        return
+    reset_game_title()
+
 
 def stop_rec_sh():
     sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
@@ -157,6 +159,8 @@ def stop_rec_cb(calldata):
         + OBS_OUTPUT_CODES.get(obs.calldata_int(calldata, "code"))
         + "\n"
     )
+    RecordingInfo.isRecording = False
+
 
 def replay_buffer_handler(event):
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
@@ -267,6 +271,7 @@ def populate_list_property_with_source_names(list_property):
         obs.obs_property_list_add_string(list_property, name, name)
     obs.source_list_release(sources)
 
+
 def script_unload():
     # Clear Settings class
     Settings.AddTitleBool = None
@@ -278,28 +283,32 @@ def script_unload():
     # Clear RecordingInfo class
     RecordingInfo.CurrentRecording = None
     RecordingInfo.GameTitle = None
+    RecordingInfo.isRecording = False
 
 
 # CLASSES
 class RecordingInfo:
-    """Class that holds important information about recording
-    """
+    """Class that holds important information about recording"""
+
     CurrentRecording = None
     GameTitle = "Manual Recording"
+    isRecording = False
+
 
 class Settings:
-    """Class that holds data from Script settings to use in script
-    """
+    """Class that holds data from Script settings to use in script"""
+
     AddTitleBool = None
     Extension = None
     ExtensionMask = None
     OutputDir = None
     Sett = None
 
+
 class File:
-    """Class that allows better control over files for the needs of this script
-    """
-    def __init__(self, customPath) -> None:
+    """Class that allows better control over files for the needs of this script"""
+
+    def __init__(self, customPath=None, isReplay: bool = False) -> None:
         """Create a file based on either specified path or path that was configured in Scripts settings
 
         Args:
