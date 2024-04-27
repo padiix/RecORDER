@@ -25,32 +25,45 @@ def start_rec_sh():
     sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
     obs.signal_handler_connect(sh, "activate", start_rec_cb)
 
+
 def start_rec_cb(calldata):
-    print("Recording has started, remembering the first file name...")
-    # I'm not happy with that, but it will have to do
-    RecordingInfo.CurrentRecording = find_latest_file(Settings.OutputDir, '\*')
-    print("Current file: " + RecordingInfo.CurrentRecording)
+    print("\n[-----]\n")
+    print("Recording has started.")
+    RecordingInfo.isRecording = True
+    RecordingInfo.CurrentRecording = None
+    print("Cleared the CurrentRecording variable in case of left over data." + "\n")
+
 
 def file_changed_sh():
     sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
     obs.signal_handler_connect(sh, "file_changed", file_changed_cb)
 
+
 def file_changed_cb(calldata):
-    import debugpy; debugpy.breakpoint()
-    print("File was changed, moving the previous one.")
-    file = File(customPath = RecordingInfo.CurrentRecording)
+    print("File was changed, moving the previous one to fitting folder...")
+    print("\n========================================\n")
+
+    # GETTING THE PREVIOUS FILE FIRST
+    # I'm not happy with that, but it will have to do
+    RecordingInfo.CurrentRecording = find_latest_file(
+        Settings.OutputDir, Settings.ExtensionMask
+    )
+    print("Previous file: " + RecordingInfo.CurrentRecording)
+
+    file = File(customPath=RecordingInfo.CurrentRecording)
     file.create_new_folder()
     file.remember_and_move()
-    
+
     print("Moved the old file.")
-    print("File: " + file.get_filename())
-    print("========================================")
     print("Old path: " + file.get_oldPath())
     print("New path: " + file.get_newPath())
-    
-    print("Getting the new file...") 
+    RecordingInfo.CurrentRecording = None
+    print("\n========================================\n")
+
+    print("Getting the new file...")
     RecordingInfo.CurrentRecording = obs.calldata_string(calldata, "next_file")
-    print("Current file: " + RecordingInfo.CurrentRecording)
+    print("Current file: " + RecordingInfo.CurrentRecording + "\n")
+
 
 def hooked_sh():
     source = obs.obs_get_source_by_name(obs.obs_data_get_string(Settings.Sett, "source"))
@@ -103,18 +116,47 @@ def stop_rec_sh():
     sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
     obs.signal_handler_connect(sh, "stop", stop_rec_cb)
 
-def stop_rec_cb():
-    import debugpy; debugpy.breakpoint()
+
+def stop_rec_cb(calldata):
     print("Recording has stopped, moving the last file into right folder...")
-    file = File(customPath = RecordingInfo.CurrentRecording)
+
+    if RecordingInfo.CurrentRecording is None:
+        RecordingInfo.CurrentRecording = find_latest_file(
+            Settings.OutputDir, Settings.ExtensionMask
+        )
+
+    file = File(customPath=RecordingInfo.CurrentRecording)
     file.create_new_folder()
     file.remember_and_move()
-    
+
     print("Job's done. The file was moved.")
     print("File: " + file.get_filename())
     print("========================================")
     print("Old path: " + file.get_oldPath())
     print("New path: " + file.get_newPath())
+
+    file.clear_variables()
+    RecordingInfo.CurrentRecording = None
+
+    OBS_OUTPUT_CODES = dict(
+        [
+            (0, "OBS_OUTPUT_SUCCESS"),
+            (1, "OBS_OUTPUT_BAD_PATH"),
+            (2, "OBS_OUTPUT_CONNECT_FAILED"),
+            (3, "OBS_OUTPUT_INVALID_STREAM"),
+            (4, "OBS_OUTPUT_ERROR"),
+            (5, "OBS_OUTPUT_DISCONNECTED"),
+            (6, "OBS_OUTPUT_UNSUPPORTED"),
+            (7, "OBS_OUTPUT_NO_SPACE"),
+            (8, "OBS_OUTPUT_ENCODE_ERROR"),
+        ]
+    )
+
+    print(
+        "Output signal returned: "
+        + OBS_OUTPUT_CODES.get(obs.calldata_int(calldata, "code"))
+        + "\n"
+    )
 
 def replay_buffer_handler(event):
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
