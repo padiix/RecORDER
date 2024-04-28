@@ -1,5 +1,5 @@
 import glob
-import obspython as obs # type: ignore
+import obspython as obs  # type: ignore
 import re
 import os
 import os.path
@@ -209,10 +209,11 @@ def script_load(settings):
     Settings.Sett = settings
 
     # Loading in Signals
-    hooked_sh() # Respond to capturing any game window
-    start_rec_sh() # Respond to starting recording
-    file_changed_sh() # Respond to splitting the recording (ex. automatic recording split)
-    # stop_rec_sh()
+    hooked_sh()  # Respond to capturing any fullscreen window
+    unhooked_sh()  # Respond to stopped capture of fullscreen window
+    start_rec_sh()  # Respond to starting recording
+    file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
+    stop_rec_sh()  # Respond to stopping the recording
 
     # Loading in Frontend events to deal with Replay Buffer saving
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
