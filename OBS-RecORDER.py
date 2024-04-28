@@ -164,17 +164,18 @@ def stop_rec_cb(calldata):
 
 def replay_buffer_handler(event):
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
-        import debugpy; debugpy.breakpoint()
         print("Triggered when the replay buffer is saved.")
 
-        file = File()
+        file = File(isReplay=True)
 
         file.create_new_folder()
 
         file.remember_and_move()
-        
+
         print("Old path: " + file.get_oldPath())
-        print("New path: " + file.get_newPath())
+        print("New path: " + file.get_newPath() + "\n")
+
+        file.clear_variables()
 
 
 # HELPER FUNCTIONS
@@ -204,8 +205,9 @@ def script_load(settings):
     file_changed_sh() # Respond to splitting the recording (ex. automatic recording split)
     # stop_rec_sh()
 
-    # Loading in Frontend events to deal with Replay Buffer saving 
+    # Loading in Frontend events to deal with Replay Buffer saving
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
+
 
 def script_defaults(settings):
     obs.obs_data_set_default_string(settings, "extension", "mkv")
@@ -314,23 +316,29 @@ class File:
         Args:
             customPath (str): Path to a file that needs to be moved
         """
-        self.dataExtension = '.' + Settings.Extension
-        
+        self.dataExtension = "." + Settings.Extension
+        self.replaysFolderName = "Replays"
+
+        if isReplay is not None:
+            self.isReplay = isReplay
+        else:
+            self.isReplay = False
+
         # Lets the file_changed cb work as I intended
         if customPath is not None:
             self.path = customPath
         else:
             self.path = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
-        
+
         self.dir = os.path.dirname(self.path)
         self.title = RecordingInfo.GameTitle
 
         self.rawfile = os.path.basename(self.path)
-        self.file = self.rawfile[:-len(self.dataExtension)] + self.dataExtension
-        self.newFolder = self.dir + '\\' + self.title
+        self.file = self.rawfile[: -len(self.dataExtension)] + self.dataExtension
+        self.newFolder = self.dir + "\\" + self.title
 
         if Settings.AddTitleBool is True:
-            self.newfile = self.title + ' - ' + self.file
+            self.newfile = self.title + " - " + self.file
         else:
             self.newfile = self.file
 
@@ -359,9 +367,12 @@ class File:
         return self.newFolder + '\\' + self.newfile
     
     def create_new_folder(self) -> None:
-        """Creates a new folder based on title of the captured fullscreen application
-        """
+        """Creates a new folder based on title of the captured fullscreen application"""
         if not os.path.exists(self.newFolder):
+            os.makedirs(self.newFolder)
+
+        if self.isReplay is True:
+            self.newFolder = self.newFolder + "\\" + self.replaysFolderName
             os.makedirs(self.newFolder)
 
     def remember_and_move(self) -> None:
@@ -396,11 +407,11 @@ class File:
             self.newfile = self.file
 
     def clear_variables(self) -> None:
-        """Clears parameters from data
-        """
+        """Clears parameters from data"""
         self.path = None
         self.dir = None
         self.title = None
         self.rawfile = None
         self.file = None
         self.newFolder = None
+        self.isReplay = False
