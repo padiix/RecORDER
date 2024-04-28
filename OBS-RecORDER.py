@@ -206,6 +206,12 @@ def find_latest_file(folder_path, file_type):
     max_file = max(files, key=os.path.getctime)
     return max_file
 
+
+def reset_game_title():
+    RecordingInfo.GameTitle = "Manual Recording"
+    print("Game title changed: " + RecordingInfo.GameTitle + "\n")
+
+
 # OBS FUNCTIONS
 def script_load(settings):
     # Loading in settings
