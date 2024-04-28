@@ -102,8 +102,10 @@ def refresh_captured_window_title_cb(calldata):
         return
 
     # Grab the title name
-    RecordingInfo.GameTitle = obs.calldata_string(calldata, "title")
-    print("Game title changed: " + RecordingInfo.GameTitle)
+    RecordingInfo.GameTitle = remove_unusable_title_characters(
+        obs.calldata_string(calldata, "title")
+    )
+    print("Game title changed: " + RecordingInfo.GameTitle + "\n")
 
     obs.obs_source_release(scene_as_source)
 
