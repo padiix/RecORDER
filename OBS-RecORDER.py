@@ -409,8 +409,9 @@ class File:
             os.makedirs(self.newFolder)
 
         if self.isReplay is True:
-            self.newFolder = self.newFolder + "\\" + self.replaysFolderName
-            os.makedirs(self.newFolder)
+            if not os.path.exists(self.newFolder):
+                self.newFolder = self.newFolder + "\\" + self.replaysFolderName
+                os.makedirs(self.newFolder)
 
     def remember_and_move(self) -> None:
         """Remembers the previous location of the file and moves it to a new one"""
