@@ -9,15 +9,6 @@ from pathlib import Path
 # Rewriting whole script using the Signals!
 # "file_changed" signal = lets move the automatically splitted file to a folder
 # "hooked" signal = gets captured window and possibly a title of a captured game
-
-# TO TEST:
-# > Callbacks:
-#       - file_changed_cb()
-#       - reset_captured_window_title_cb()
-#       - stop_rec_cb()
-# 
-# TO DO:
-# > replay_buffer_handler
 #
 
 
