@@ -20,6 +20,7 @@ from pathlib import Path
 # > replay_buffer_handler
 #
 
+
 # SIGNAL-RELATED
 def start_rec_sh():
     sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
@@ -66,17 +67,22 @@ def file_changed_cb(calldata):
 
 
 def hooked_sh():
-    source = obs.obs_get_source_by_name(obs.obs_data_get_string(Settings.Sett, "source"))
+    source = obs.obs_get_source_by_name(
+        obs.obs_data_get_string(Settings.Sett, "source")
+    )
     sh = obs.obs_source_get_signal_handler(source)
-    
+
     obs.signal_handler_connect(sh, "hooked", refresh_captured_window_title_cb)
 
     obs.obs_source_release(source)
 
+
 def refresh_captured_window_title_cb(calldata):
     scene_as_source = obs.obs_frontend_get_current_scene()
 
-    if obs.obs_source_get_name(scene_as_source) != obs.obs_data_get_string(Settings.Sett, "scene"):
+    if obs.obs_source_get_name(scene_as_source) != obs.obs_data_get_string(
+        Settings.Sett, "scene"
+    ):
         obs.obs_source_release(scene_as_source)
         return None
 
@@ -101,8 +107,11 @@ def refresh_captured_window_title_cb(calldata):
 
     obs.obs_source_release(scene_as_source)
 
+
 def unhooked_sh():
-    source = obs.obs_get_source_by_name(obs.obs_data_get_string(Settings.Sett, "source"))
+    source = obs.obs_get_source_by_name(
+        obs.obs_data_get_string(Settings.Sett, "source")
+    )
     sh = obs.obs_source_get_signal_handler(source)
 
     obs.signal_handler_connect(sh, "unhooked", reset_captured_window_title_cb)
@@ -180,14 +189,15 @@ def replay_buffer_handler(event):
 
 # HELPER FUNCTIONS
 def remove_unusable_title_characters(title):
-    #Remove non-alphanumeric characters (ex. ':')
-    title = re.sub(r'[^A-Za-z0-9 ]+', '', title)
-    #Remove whitespaces at the end
+    # Remove non-alphanumeric characters (ex. ':')
+    title = re.sub(r"[^A-Za-z0-9 ]+", "", title)
+    # Remove whitespaces at the end
     title = "".join(title.rstrip())
-    #Remove additional whitespaces
+    # Remove additional whitespaces
     title = " ".join(title.split())
 
     return title
+
 
 def find_latest_file(folder_path, file_type):
     files = glob.glob(folder_path + file_type)
@@ -212,57 +222,84 @@ def script_load(settings):
 def script_defaults(settings):
     obs.obs_data_set_default_string(settings, "extension", "mkv")
 
+
 def script_update(settings):
     # Fetching the Settings
     Settings.AddTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
     Settings.OutputDir = obs.obs_data_get_string(settings, "outputdir")
-    Settings.OutputDir = Settings.OutputDir.replace('/','\\')
+    Settings.OutputDir = Settings.OutputDir.replace("/", "\\")
     Settings.Extension = obs.obs_data_get_string(settings, "extension")
-    Settings.ExtensionMask = '\*' + Settings.Extension
+    Settings.ExtensionMask = "\*" + Settings.Extension
+
 
 def script_description():
-    desc = ("<h3>OBS RecORDER </h3>"
-            "<hr>"
-            "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
-            "<small>Created by:</small> <b>padii</b><br><br>"
-            "<h4>Settings:</h4>")
+    desc = (
+        "<h3>OBS RecORDER </h3>"
+        "<hr>"
+        "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
+        "<small>Created by:</small> <b>padii</b><br><br>"
+        "<h4>Settings:</h4>"
+    )
     return desc
+
 
 def script_properties():
     props = obs.obs_properties_create()
-    
-    #Title checkmark
-    bool_p = obs.obs_properties_add_bool(props, "title_before_bool", "Add name of the game as a recording prefix")
-    obs.obs_property_set_long_description(bool_p, "Check if you want to have name of the game appended as a prefix to the recording, else uncheck")
-    
-    #Scene list
-    scene_for_recording = obs.obs_properties_add_list(props, "scene", "Scene for recording",
-                                    obs.OBS_COMBO_TYPE_LIST,
-                                    obs.OBS_COMBO_FORMAT_STRING)
+
+    # Title checkmark
+    bool_p = obs.obs_properties_add_bool(
+        props, "title_before_bool", "Add name of the game as a recording prefix"
+    )
+    obs.obs_property_set_long_description(
+        bool_p,
+        "Check if you want to have name of the game appended as a prefix to the recording, else uncheck",
+    )
+
+    # Scene list
+    scene_for_recording = obs.obs_properties_add_list(
+        props,
+        "scene",
+        "Scene for recording",
+        obs.OBS_COMBO_TYPE_LIST,
+        obs.OBS_COMBO_FORMAT_STRING,
+    )
     populate_list_property_with_scenes(scene_for_recording)
 
     # Source list
-    sources_for_recording = obs.obs_properties_add_list(props, "source", "Source name",
-              obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
+    sources_for_recording = obs.obs_properties_add_list(
+        props,
+        "source",
+        "Source name",
+        obs.OBS_COMBO_TYPE_LIST,
+        obs.OBS_COMBO_FORMAT_STRING,
+    )
     populate_list_property_with_source_names(sources_for_recording)
 
     # Output directory
     obs.obs_properties_add_path(
-        props, "outputdir", "Recordings folder", obs.OBS_PATH_DIRECTORY,
-        None, str(Path.home()))
-    
+        props,
+        "outputdir",
+        "Recordings folder",
+        obs.OBS_PATH_DIRECTORY,
+        None,
+        str(Path.home()),
+    )
+
     # Extension of file
     obs.obs_properties_add_text(
-        props,"extension","File extension", obs.OBS_TEXT_DEFAULT)
+        props, "extension", "File extension", obs.OBS_TEXT_DEFAULT
+    )
 
     return props
 
+
 def populate_list_property_with_scenes(list_property):
     scenes = obs.obs_frontend_get_scene_names()
-    
+
     for scene in scenes:
         obs.obs_property_list_add_string(list_property, scene, scene)
     obs.source_list_release(scenes)
+
 
 def populate_list_property_with_source_names(list_property):
     sources = obs.obs_enum_sources()
@@ -349,23 +386,23 @@ class File:
             str: name of a file
         """
         return self.file
-    
+
     def get_oldPath(self) -> str:
         """Returns previous path the file was located in
 
         Returns:
             str: previous path of file
         """
-        return self.dir +'\\'+ self.file
-    
+        return self.dir + "\\" + self.file
+
     def get_newPath(self) -> str:
         """Returns current path where file is located
 
         Returns:
             str: current path of file
         """
-        return self.newFolder + '\\' + self.newfile
-    
+        return self.newFolder + "\\" + self.newfile
+
     def create_new_folder(self) -> None:
         """Creates a new folder based on title of the captured fullscreen application"""
         if not os.path.exists(self.newFolder):
@@ -376,13 +413,13 @@ class File:
             os.makedirs(self.newFolder)
 
     def remember_and_move(self) -> None:
-        """Remembers the previous location of the file and moves it to a new one
-        """
-        oldPath = self.dir +'\\'+ self.file
-        newPath = self.newFolder + '\\' + self.newfile
-        textFile = (oldPath[:-3] + "txt")
+        """Remembers the previous location of the file and moves it to a new one"""
+        oldPath = self.dir + "\\" + self.file
+        newPath = self.newFolder + "\\" + self.newfile
 
-        f = open(oldPath[:-3]+"txt", "w")
+        textFile = oldPath[:-3] + "txt"
+
+        f = open(oldPath[:-3] + "txt", "w")
         f.write(newPath)
         f.close()
 
@@ -390,19 +427,18 @@ class File:
         os.remove(textFile)
 
     def refresh_variables(self) -> None:
-        """Refreshes information in parameters used by this class
-        """
-        self.dataExtension = '.' + Settings.Extension
+        """Refreshes information in parameters used by this class"""
+        self.dataExtension = "." + Settings.Extension
         self.path = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
         self.dir = os.path.dirname(self.path)
         self.title = RecordingInfo.GameTitle
 
         self.rawfile = os.path.basename(self.path)
-        self.file = self.rawfile[:-len(self.dataExtension)] + self.dataExtension
-        self.newFolder = self.dir + '\\' + self.title
+        self.file = self.rawfile[: -len(self.dataExtension)] + self.dataExtension
+        self.newFolder = self.dir + "\\" + self.title
 
         if Settings.AddTitleBool is True:
-            self.newfile = self.title + ' - ' + self.file
+            self.newfile = self.title + " - " + self.file
         else:
             self.newfile = self.file
 
