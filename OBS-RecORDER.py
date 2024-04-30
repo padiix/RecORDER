@@ -2,14 +2,11 @@ import glob
 import obspython as obs  # type: ignore
 import re
 import os
-import os.path
-import shutil
 from pathlib import Path
 
 # Rewriting whole script using the Signals!
 # "file_changed" signal = lets move the automatically splitted file to a folder
-# "hooked" signal = gets captured window and possibly a title of a captured game
-#
+# "get_hooked" procedure = if you start recording and the script didn't get yet notified of the hooking, it will check it itself
 
 
 # SIGNAL-RELATED
@@ -19,11 +16,14 @@ def start_rec_sh():
 
 
 def start_rec_cb(calldata):
-    print("\n[-----]\n")
-    print("Recording has started.")
+    print("------------------------------")
+    print("Recording has started...\n")
+
     RecordingInfo.isRecording = True
     RecordingInfo.CurrentRecording = None
-    print("Cleared the CurrentRecording variable in case of left over data." + "\n")
+    print(f"Recording started: {RecordingInfo.isRecording}")
+    print(f"CurrentRecording is {RecordingInfo.CurrentRecording}")
+    print("------------------------------")
 
 
 def file_changed_sh():
@@ -32,97 +32,49 @@ def file_changed_sh():
 
 
 def file_changed_cb(calldata):
-    print("File was changed, moving the previous one to fitting folder...")
-    print("\n========================================\n")
+    print("------------------------------")
+    print(
+        "Running get_hooked procedure to get current app title..."
+    )
+    check_if_hooked_and_update_title()
+    
+    print("Recording automatic splitting detected!")
+    print("Moving saved recording...")
 
     # GETTING THE PREVIOUS FILE FIRST
     # I'm not happy with that, but it will have to do
     RecordingInfo.CurrentRecording = find_latest_file(
         Settings.OutputDir, Settings.ExtensionMask
     )
-    print("Previous file: " + RecordingInfo.CurrentRecording)
+    print(f"Saved recording: {RecordingInfo.CurrentRecording}")
 
     file = File(customPath=RecordingInfo.CurrentRecording)
     file.create_new_folder()
     file.remember_and_move()
 
-    print("Moved the old file.")
-    print("Old path: " + file.get_oldPath())
-    print("New path: " + file.get_newPath())
+    print("Done!")
+    print(f"New path: {file.get_newPath()}")
+    
     RecordingInfo.CurrentRecording = None
-    print("\n========================================\n")
-
-    print("Getting the new file...")
     RecordingInfo.CurrentRecording = obs.calldata_string(calldata, "next_file")
-    print("Current file: " + RecordingInfo.CurrentRecording + "\n")
-
-
-def hooked_sh():
-    source = obs.obs_get_source_by_name(
-        obs.obs_data_get_string(Settings.Sett, "source")
-    )
-    sh = obs.obs_source_get_signal_handler(source)
-
-    obs.signal_handler_connect(sh, "hooked", refresh_captured_window_title_cb)
-
-    obs.obs_source_release(source)
-
-
-def refresh_captured_window_title_cb(calldata):
-    scene_as_source = obs.obs_frontend_get_current_scene()
-
-    if obs.obs_source_get_name(scene_as_source) != obs.obs_data_get_string(
-        Settings.Sett, "scene"
-    ):
-        obs.obs_source_release(scene_as_source)
-        return None
-
-    scene_items = obs.obs_scene_enum_items(obs.obs_scene_from_source(scene_as_source))
-
-    source = None
-    for item in scene_items:
-        source_item = obs.obs_sceneitem_get_source(item)
-        source_name = obs.obs_source_get_name(source_item)
-        if source_name == obs.obs_data_get_string(Settings.Sett, "source"):
-            source = source_item
-            break
-    obs.sceneitem_list_release(scene_items)
-
-    if source is None:
-        print("Could not find selected source in current scene")
-        return
-
-    # Grab the title name
-    RecordingInfo.GameTitle = remove_unusable_title_characters(
-        obs.calldata_string(calldata, "title")
-    )
-    print("Game title changed: " + RecordingInfo.GameTitle + "\n")
-
-    obs.obs_source_release(scene_as_source)
-
-
-def unhooked_sh():
-    source = obs.obs_get_source_by_name(
-        obs.obs_data_get_string(Settings.Sett, "source")
-    )
-    sh = obs.obs_source_get_signal_handler(source)
-
-    obs.signal_handler_connect(sh, "unhooked", reset_captured_window_title_cb)
-
-
-def reset_captured_window_title_cb(calldata):
-    if RecordingInfo.isRecording is True:
-        return
-    reset_game_title()
+    print(f"Current file: {RecordingInfo.CurrentRecording}")
+    print("------------------------------")
 
 
 def stop_rec_sh():
-    sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
+    output = obs.obs_frontend_get_recording_output()
+    sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "stop", stop_rec_cb)
+    obs.obs_output_release(output)
 
 
 def stop_rec_cb(calldata):
+    print("------------------------------")
     print("Recording has stopped, moving the last file into right folder...")
+    print(
+        "Running get_hooked procedure to get current app title..."
+    )
+    check_if_hooked_and_update_title()
 
     if RecordingInfo.CurrentRecording is None:
         RecordingInfo.CurrentRecording = find_latest_file(
@@ -134,12 +86,9 @@ def stop_rec_cb(calldata):
     file.remember_and_move()
 
     print("Job's done. The file was moved.")
-    print("File: " + file.get_filename())
-    print("========================================")
-    print("Old path: " + file.get_oldPath())
-    print("New path: " + file.get_newPath())
+    print(f"File: {file.get_filename()}")
+    print(f"New path: {file.get_newPath()}")
 
-    file.clear_variables()
     RecordingInfo.CurrentRecording = None
 
     OBS_OUTPUT_CODES = dict(
@@ -156,28 +105,65 @@ def stop_rec_cb(calldata):
         ]
     )
 
+    output_code = OBS_OUTPUT_CODES.get(obs.calldata_int(calldata, "code"))
+    
     print(
-        "Output signal returned: "
-        + OBS_OUTPUT_CODES.get(obs.calldata_int(calldata, "code"))
-        + "\n"
+        f"Output signal returned: {output_code}"
     )
     RecordingInfo.isRecording = False
+    print("------------------------------")
 
 
 def replay_buffer_handler(event):
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
-        print("Triggered when the replay buffer is saved.")
+        print("------------------------------")
+        print("Saving the Replay Buffer...")
 
+        print(
+        "Running get_hooked procedure to get current app title..."
+        )
+        check_if_hooked_and_update_title()
+        
         file = File(isReplay=True)
 
         file.create_new_folder()
 
         file.remember_and_move()
 
-        print("Old path: " + file.get_oldPath())
-        print("New path: " + file.get_newPath() + "\n")
+        print(f"Old path: {file.get_oldPath()}")
+        print(f"New path: {file.get_newPath()}")
+        print("------------------------------")
 
-        file.clear_variables()
+
+def check_if_hooked_and_update_title():
+    calldata = get_hooked(Settings.SourceUUID)
+    print("Checking if source is hooked to any window...")
+    if calldata is not None:
+        if not gh_isHooked(calldata):
+            obs.calldata_destroy(calldata)
+            RecordingInfo.GameTitle = "Manual Recording"
+            return
+        print("Hooked!")
+        RecordingInfo.GameTitle = gh_title(calldata)
+        print("Current GameTitle: "+ RecordingInfo.GameTitle)
+    obs.calldata_destroy(calldata)
+
+
+def get_hooked(uuid):
+    source = obs.obs_get_source_by_uuid(uuid)
+    cd = obs.calldata_create()
+    ph = obs.obs_source_get_proc_handler(source)
+    obs.proc_handler_call(ph, "get_hooked", cd)
+    obs.obs_source_release(source)
+    return cd
+
+
+def gh_isHooked(calldata) -> bool:
+    return obs.calldata_bool(calldata, "hooked")
+
+
+def gh_title(calldata) -> str:
+    return remove_unusable_title_characters(obs.calldata_string(calldata, "title"))
 
 
 # HELPER FUNCTIONS
@@ -192,31 +178,44 @@ def remove_unusable_title_characters(title):
     return title
 
 
+def get_recording_source_uuid():
+    scene_as_source = obs.obs_frontend_get_current_scene()
+    scene_items = obs.obs_scene_enum_items(obs.obs_scene_from_source(scene_as_source))
+
+    source_uuid = None
+    for item in scene_items:
+        source_item = obs.obs_sceneitem_get_source(item)
+        source_name = obs.obs_source_get_name(source_item)
+        if source_name == obs.obs_data_get_string(Settings.Sett, "source"):
+            source_uuid = obs.obs_source_get_uuid(source_item)
+            break
+
+    obs.sceneitem_list_release(scene_items)
+
+    obs.obs_source_release(scene_as_source)
+
+    return source_uuid
+
+
 def find_latest_file(folder_path, file_type):
     files = glob.glob(folder_path + file_type)
     max_file = max(files, key=os.path.getctime)
-    return max_file
-
-
-def reset_game_title():
-    RecordingInfo.GameTitle = "Manual Recording"
-    print("Game title changed: " + RecordingInfo.GameTitle + "\n")
+    return os.path.normpath(max_file)
 
 
 # OBS FUNCTIONS
 def script_load(settings):
     # Loading in settings
     Settings.Sett = settings
-
+    
     # Loading in Signals
-    hooked_sh()  # Respond to capturing any fullscreen window
-    unhooked_sh()  # Respond to stopped capture of fullscreen window
     start_rec_sh()  # Respond to starting recording
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
     stop_rec_sh()  # Respond to stopping the recording
-
+    
     # Loading in Frontend events to deal with Replay Buffer saving
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
+    
 
 
 def script_defaults(settings):
@@ -226,10 +225,11 @@ def script_defaults(settings):
 def script_update(settings):
     # Fetching the Settings
     Settings.AddTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
-    Settings.OutputDir = obs.obs_data_get_string(settings, "outputdir")
-    Settings.OutputDir = Settings.OutputDir.replace("/", "\\")
+    Settings.OutputDir = os.path.normpath(obs.obs_data_get_string(settings, "outputdir"))
+    Settings.SourceUUID = get_recording_source_uuid()
     Settings.Extension = obs.obs_data_get_string(settings, "extension")
     Settings.ExtensionMask = "\*" + Settings.Extension
+    print("Updated the settings!")
 
 
 def script_description():
@@ -252,24 +252,14 @@ def script_properties():
     )
     obs.obs_property_set_long_description(
         bool_p,
-        "Check if you want to have name of the game appended as a prefix to the recording, else uncheck",
+        "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
     )
-
-    # Scene list
-    scene_for_recording = obs.obs_properties_add_list(
-        props,
-        "scene",
-        "Scene for recording",
-        obs.OBS_COMBO_TYPE_LIST,
-        obs.OBS_COMBO_FORMAT_STRING,
-    )
-    populate_list_property_with_scenes(scene_for_recording)
 
     # Source list
     sources_for_recording = obs.obs_properties_add_list(
         props,
         "source",
-        "Source name",
+        "Capturing source name",
         obs.OBS_COMBO_TYPE_LIST,
         obs.OBS_COMBO_FORMAT_STRING,
     )
@@ -287,18 +277,10 @@ def script_properties():
 
     # Extension of file
     obs.obs_properties_add_text(
-        props, "extension", "File extension", obs.OBS_TEXT_DEFAULT
+        props, "extension", "Recording extension", obs.OBS_TEXT_DEFAULT
     )
 
     return props
-
-
-def populate_list_property_with_scenes(list_property):
-    scenes = obs.obs_frontend_get_scene_names()
-
-    for scene in scenes:
-        obs.obs_property_list_add_string(list_property, scene, scene)
-    obs.source_list_release(scenes)
 
 
 def populate_list_property_with_source_names(list_property):
@@ -317,6 +299,7 @@ def script_unload():
     Settings.Extension = None
     Settings.ExtensionMask = None
     Settings.OutputDir = None
+    Settings.SourceUUID = None
     Settings.Sett = None
 
     # Clear RecordingInfo class
@@ -336,7 +319,7 @@ class RecordingInfo:
 
 class Settings:
     """Class that holds data from Script settings to use in script"""
-
+    SourceUUID = None
     AddTitleBool = None
     Extension = None
     ExtensionMask = None
@@ -347,37 +330,33 @@ class Settings:
 class File:
     """Class that allows better control over files for the needs of this script"""
 
-    def __init__(self, customPath=None, isReplay: bool = False) -> None:
+    def __init__(self, customPath=None, isReplay = False) -> None:
         """Create a file based on either specified path or path that was configured in Scripts settings
 
         Args:
             customPath (str): Path to a file that needs to be moved
+            isReplay (bool): Set to true if handled recording is from replay buffer
         """
         self.dataExtension = "." + Settings.Extension
         self.replaysFolderName = "Replays"
 
-        if isReplay is not None:
+        # If this object is created during Replay Buffer handling, it will do additional stuff needed
+        if isReplay:
             self.isReplay = isReplay
-        else:
+        else: 
             self.isReplay = False
 
-        # Lets the file_changed cb work as I intended
+
+        # Allow to specify a custom path where the file is located.
         if customPath is not None:
             self.path = customPath
         else:
             self.path = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
 
+        # Prepare paths needed for functions
         self.dir = os.path.dirname(self.path)
-        self.title = RecordingInfo.GameTitle
-
         self.rawfile = os.path.basename(self.path)
-        self.file = self.rawfile[: -len(self.dataExtension)] + self.dataExtension
-        self.newFolder = self.dir + "\\" + self.title
 
-        if Settings.AddTitleBool is True:
-            self.newfile = self.title + " - " + self.file
-        else:
-            self.newfile = self.file
 
     def get_filename(self) -> str:
         """Returns the file name
@@ -385,7 +364,19 @@ class File:
         Returns:
             str: name of a file
         """
-        return self.file
+        return self.rawfile[: -len(self.dataExtension)] + self.dataExtension
+
+    def get_newFolder(self) -> str:
+        if self.isReplay:
+            return os.path.join(self.dir, RecordingInfo.GameTitle, self.replaysFolderName)
+        else:
+            return os.path.join(self.dir, RecordingInfo.GameTitle)
+
+    def get_newFilename(self) -> str:
+        if Settings.AddTitleBool:
+            return RecordingInfo.GameTitle + ' - ' + self.get_filename()
+        else:
+            return self.get_filename() 
 
     def get_oldPath(self) -> str:
         """Returns previous path the file was located in
@@ -393,7 +384,7 @@ class File:
         Returns:
             str: previous path of file
         """
-        return self.dir + "\\" + self.file
+        return os.path.join(self.dir, self.get_filename()) 
 
     def get_newPath(self) -> str:
         """Returns current path where file is located
@@ -401,54 +392,28 @@ class File:
         Returns:
             str: current path of file
         """
-        return self.newFolder + "\\" + self.newfile
+        return os.path.join(self.get_newFolder(), self.get_newFilename())
 
     def create_new_folder(self) -> None:
         """Creates a new folder based on title of the captured fullscreen application"""
-        if not os.path.exists(self.newFolder):
-            os.makedirs(self.newFolder)
-
-        if self.isReplay is True:
-            if not os.path.exists(self.newFolder):
-                self.newFolder = self.newFolder + "\\" + self.replaysFolderName
-                os.makedirs(self.newFolder)
+        if not os.path.exists(self.get_newFolder()):
+            os.makedirs(self.get_newFolder())
 
     def remember_and_move(self) -> None:
         """Remembers the previous location of the file and moves it to a new one"""
-        oldPath = self.dir + "\\" + self.file
-        newPath = self.newFolder + "\\" + self.newfile
+        oldPath = self.get_oldPath()
+        newPath = self.get_newPath()
 
-        textFile = oldPath[:-3] + "txt"
+        # ### DON'T MODIFY THIS PART
+        # # For all I know this file, which is not used at all, but it stalls enough that the move action starts working, fucking lmao
+        # textFile = oldPath[:-3] + "txt"
 
-        f = open(oldPath[:-3] + "txt", "w")
-        f.write(newPath)
-        f.close()
+        # with open(textFile, "w") as f:
+        #     f.write(newPath)
+            
+        # os.remove(textFile)
+        # ### DON'T MODIFY THIS PART
+        
+        os.renames(oldPath, newPath)
+        
 
-        shutil.move(oldPath, newPath)
-        os.remove(textFile)
-
-    def refresh_variables(self) -> None:
-        """Refreshes information in parameters used by this class"""
-        self.dataExtension = "." + Settings.Extension
-        self.path = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
-        self.dir = os.path.dirname(self.path)
-        self.title = RecordingInfo.GameTitle
-
-        self.rawfile = os.path.basename(self.path)
-        self.file = self.rawfile[: -len(self.dataExtension)] + self.dataExtension
-        self.newFolder = self.dir + "\\" + self.title
-
-        if Settings.AddTitleBool is True:
-            self.newfile = self.title + " - " + self.file
-        else:
-            self.newfile = self.file
-
-    def clear_variables(self) -> None:
-        """Clears parameters from data"""
-        self.path = None
-        self.dir = None
-        self.title = None
-        self.rawfile = None
-        self.file = None
-        self.newFolder = None
-        self.isReplay = False
