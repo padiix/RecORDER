@@ -12,9 +12,16 @@ from pathlib import Path
 # TODO: Config instead of the Classes storing the data
 
 # Global variables
+addTitleBool = None
+recordingExtension = None
+recordingExtensionMask = None
+outputDir = None
+
+# Values supporting smooth working and less calls
 sourceUUID = None
 sett = None
 
+# Values connected to recording
 currentRecording = None
 gameTitle = "Manual Recording"
 isRecording = False
@@ -56,8 +63,8 @@ def file_changed_cb(calldata):
 
     # GETTING THE PREVIOUS FILE FIRST
     # I'm not happy with that, but it will have to do
-    global currentRecording
-    currentRecording = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
+    global currentRecording, recordingExtensionMask, outputDir
+    currentRecording = find_latest_file(outputDir, recordingExtensionMask)
     print(f"Saved recording: {currentRecording}")
 
     file = File(customPath=currentRecording)
@@ -89,9 +96,9 @@ def stop_rec_cb(calldata):
     print("Running get_hooked procedure to get current app title...")
     check_if_hooked_and_update_title()
 
-    global currentRecording, isRecording
+    global currentRecording, isRecording, recordingExtensionMask, outputDir
     if currentRecording is None:
-        currentRecording = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
+        currentRecording = find_latest_file(outputDir, recordingExtensionMask)
 
     file = File(customPath=currentRecording)
     file.create_new_folder()
@@ -247,14 +254,13 @@ def script_defaults(settings):
 
 
 def script_update(settings):
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir
     # Fetching the Settings
-    Settings.AddTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
-    Settings.OutputDir = os.path.normpath(
-        obs.obs_data_get_string(settings, "outputdir")
-    )
+    addTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
+    outputDir = os.path.normpath(obs.obs_data_get_string(settings, "outputdir"))
 
-    Settings.Extension = obs.obs_data_get_string(settings, "extension")
-    Settings.ExtensionMask = "\*" + Settings.Extension
+    recordingExtension = obs.obs_data_get_string(settings, "extension")
+    recordingExtensionMask = "\*" + recordingExtension
     print("Updated the settings!")
 
 
@@ -267,10 +273,6 @@ def script_description():
         "<h4>Settings:</h4>"
     )
     return desc
-
-
-def button_pressed():
-    pass
 
 
 def UUID_of_sel_src(props, prop, *args, **kwargs):
@@ -338,30 +340,24 @@ def populate_list_property_with_source_names(list_property):
 
 
 def script_unload():
+    # Fetching global variables
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir
+    global sourceUUID, sett
+    global currentRecording, gameTitle, isRecording
     # Clear Settings class
-    Settings.AddTitleBool = None
-    Settings.Extension = None
-    Settings.ExtensionMask = None
-    Settings.OutputDir = None
-
-    global sourceUUID, sett, currentRecording, gameTitle, isRecording
+    addTitleBool = None
+    recordingExtension = None
+    recordingExtensionMask = None
+    outputDir = None
 
     # Clear cached settings and important global values
     sourceUUID = None
     sett = None
 
+    # Clear recording related values
     currentRecording = None
     gameTitle = None
     isRecording = False
-
-
-class Settings:
-    """Class that holds data from Script settings to use in script"""
-
-    AddTitleBool = None
-    Extension = None
-    ExtensionMask = None
-    OutputDir = None
 
 
 class File:
@@ -374,7 +370,9 @@ class File:
             customPath (str): Path to a file that needs to be moved
             isReplay (bool): Set to true if handled recording is from replay buffer
         """
-        self.dataExtension = "." + Settings.Extension
+        global recordingExtension, recordingExtensionMask, outputDir
+
+        self.dataExtension = "." + recordingExtension
         self.replaysFolderName = "Replays"
 
         # If this object is created during Replay Buffer handling, it will do additional stuff needed
@@ -387,7 +385,7 @@ class File:
         if customPath is not None:
             self.path = customPath
         else:
-            self.path = find_latest_file(Settings.OutputDir, Settings.ExtensionMask)
+            self.path = find_latest_file(outputDir, recordingExtensionMask)
 
         # Prepare paths needed for functions
         self.dir = os.path.dirname(self.path)
@@ -409,7 +407,8 @@ class File:
             return os.path.join(self.dir, gameTitle)
 
     def get_newFilename(self) -> str:
-        if Settings.AddTitleBool:
+        global addTitleBool
+        if addTitleBool:
             global gameTitle
             return gameTitle + " - " + self.get_filename()
         else:
