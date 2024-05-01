@@ -208,11 +208,7 @@ def get_recording_source_uuid(configured_source):
         )
         if scene_item:
             source = obs.obs_sceneitem_get_source(scene_item)
-
-            try:
-                source_uuid = obs.obs_source_get_uuid(source)
-            except UnboundLocalError:
-                return
+            source_uuid = obs.obs_source_get_uuid(source)
 
     obs.obs_source_release(current_scene_as_source)
 
@@ -223,7 +219,11 @@ def refresh_source_uuid():
     global sett, sourceUUID
     s_name = obs.obs_data_get_string(sett, "source")
     if len(s_name) > 0:
-        sourceUUID = get_recording_source_uuid(s_name)
+        try:
+            sourceUUID = get_recording_source_uuid(s_name)
+        except UnboundLocalError:
+            print("Source not found, please refresh and re-select")
+            sourceUUID = None
     else:
         sourceUUID = None
 
@@ -413,7 +413,7 @@ class Recording:
     def get_newFilename(self) -> str:
         """Returns the name of a file based on the choice of the user
         If user decided to have game title before recording name, it will add it.
-        
+
         Returns:
             str: name of the recording
         """
