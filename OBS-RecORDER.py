@@ -276,7 +276,7 @@ def script_description():
 
 
 def UUID_of_sel_src(props, prop, *args, **kwargs):
-    p = obs.obs_properties_get(props, "button")
+    p = obs.obs_properties_get(props, "src_uuid")
     refresh_source_uuid()
     obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
     return True
@@ -306,10 +306,8 @@ def script_properties():
     obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
 
     # UUID of the selected source (debugging only)
-    b = obs.obs_properties_add_button(
-        props, "button", "Show UUID of selected source", button_pressed
-    )
-    obs.obs_property_set_modified_callback(b, UUID_of_sel_src)
+    uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
+    obs.obs_property_set_modified_callback(uuid_text, UUID_of_sel_src)
 
     # Output directory
     obs.obs_properties_add_path(
