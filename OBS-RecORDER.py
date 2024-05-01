@@ -286,6 +286,32 @@ def UUID_of_sel_src(props, prop, *args, **kwargs):
     return True
 
 
+def populate_list_property_with_source_names(list_property):
+    obs.obs_property_list_clear(list_property)
+    sources = obs.obs_enum_sources()
+    obs.obs_property_list_clear(list_property)
+    obs.obs_property_list_add_string(list_property, "", "")
+    for source in sources:
+        name = obs.obs_source_get_name(source)
+        obs.obs_property_list_add_string(list_property, name, name)
+    obs.source_list_release(sources)
+
+
+def refresh_list_and_get_uuid(props, prop, *args, **kwargs):
+
+    lst = obs.obs_properties_get(props, "source")
+    populate_list_property_with_source_names(lst)
+
+    p = obs.obs_properties_get(props, "src_uuid")
+    refresh_source_uuid()
+    obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
+    return True
+
+
+def refresh_pressed(props, prop):
+    print("Refreshed sources list!")
+
+
 def script_properties():
     props = obs.obs_properties_create()
 
@@ -306,8 +332,15 @@ def script_properties():
         obs.OBS_COMBO_TYPE_LIST,
         obs.OBS_COMBO_FORMAT_STRING,
     )
+
     populate_list_property_with_source_names(sources_for_recording)
     obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
+
+    # Refresh button!
+    b = obs.obs_properties_add_button(
+        props, "button", "Refresh source list", refresh_pressed
+    )
+    obs.obs_property_set_modified_callback(b, refresh_list_and_get_uuid)
 
     # UUID of the selected source (debugging only)
     uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
@@ -329,16 +362,6 @@ def script_properties():
     )
 
     return props
-
-
-def populate_list_property_with_source_names(list_property):
-    sources = obs.obs_enum_sources()
-    obs.obs_property_list_clear(list_property)
-    obs.obs_property_list_add_string(list_property, "", "")
-    for source in sources:
-        name = obs.obs_source_get_name(source)
-        obs.obs_property_list_add_string(list_property, name, name)
-    obs.source_list_release(sources)
 
 
 def script_unload():
