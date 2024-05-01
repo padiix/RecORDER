@@ -67,12 +67,12 @@ def file_changed_cb(calldata):
     currentRecording = find_latest_file(outputDir, recordingExtensionMask)
     print(f"Saved recording: {currentRecording}")
 
-    file = File(customPath=currentRecording)
-    file.create_new_folder()
-    file.remember_and_move()
+    rec = Recording(customPath=currentRecording)
+    rec.create_new_folder()
+    rec.remember_and_move()
 
     print("Done!")
-    print(f"New path: {file.get_newPath()}")
+    print(f"New path: {rec.get_newPath()}")
 
     currentRecording = None
     currentRecording = obs.calldata_string(calldata, "next_file")
@@ -100,13 +100,13 @@ def stop_rec_cb(calldata):
     if currentRecording is None:
         currentRecording = find_latest_file(outputDir, recordingExtensionMask)
 
-    file = File(customPath=currentRecording)
-    file.create_new_folder()
-    file.remember_and_move()
+    rec = Recording(customPath=currentRecording)
+    rec.create_new_folder()
+    rec.remember_and_move()
 
     print("Job's done. The file was moved.")
-    print(f"File: {file.get_filename()}")
-    print(f"New path: {file.get_newPath()}")
+    print(f"Recording: {rec.get_filename()}")
+    print(f"New path: {rec.get_newPath()}")
 
     currentRecording = None
 
@@ -142,14 +142,14 @@ def replay_buffer_handler(event):
         print("Running get_hooked procedure to get current app title...")
         check_if_hooked_and_update_title()
 
-        file = File(isReplay=True)
+        rec = Recording(isReplay=True)
 
-        file.create_new_folder()
+        rec.create_new_folder()
 
-        file.remember_and_move()
+        rec.remember_and_move()
 
-        print(f"Old path: {file.get_oldPath()}")
-        print(f"New path: {file.get_newPath()}")
+        print(f"Old path: {rec.get_oldPath()}")
+        print(f"New path: {rec.get_newPath()}")
         print("------------------------------")
 
 
@@ -360,7 +360,7 @@ def script_unload():
     isRecording = False
 
 
-class File:
+class Recording:
     """Class that allows better control over files for the needs of this script"""
 
     def __init__(self, customPath=None, isReplay=False) -> None:
@@ -400,6 +400,12 @@ class File:
         return self.rawfile[: -len(self.dataExtension)] + self.dataExtension
 
     def get_newFolder(self) -> str:
+        """Returns a path to a folder where recording will be moved to
+        If recording is a replay buffer, it will return the path towards the replays folder inside of folder above
+
+        Returns:
+            str: name of the new folder where the recording will be located
+        """
         if self.isReplay:
             global gameTitle
             return os.path.join(self.dir, gameTitle, self.replaysFolderName)
@@ -407,6 +413,12 @@ class File:
             return os.path.join(self.dir, gameTitle)
 
     def get_newFilename(self) -> str:
+        """Returns the name of a file based on the choice of the user
+        If user decided to have game title before recording name, it will add it.
+        
+        Returns:
+            str: name of the recording
+        """
         global addTitleBool
         if addTitleBool:
             global gameTitle
@@ -436,7 +448,7 @@ class File:
             os.makedirs(self.get_newFolder())
 
     def remember_and_move(self) -> None:
-        """Remembers the previous location of the file and moves it to a new one"""
+        """Moves the recording to new location using os.renames"""
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
