@@ -8,8 +8,8 @@ from pathlib import Path
 # "file_changed" signal = lets move the automatically splitted file to a folder
 # "get_hooked" procedure = if you start recording and the script didn't get yet notified of the hooking, it will check it itself
 
-# TODO: Implement a way for storing the UUID and Signals that react to it's deletion, etc.
-# TODO: Config instead of the Classes storing the data
+# TODO: Implement a way for storing the UUID and Signals that react to it's deletion, etc. (Not figured out by me yet)
+# TODO: Config instead of the Classes storing the data (Need to think if it's necessary, but probably not)
 
 # Global variables
 addTitleBool = None
@@ -29,8 +29,10 @@ isRecording = False
 
 # SIGNAL-RELATED
 def start_rec_sh():
-    sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
+    output = obs.obs_frontend_get_recording_output()
+    sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "activate", start_rec_cb)
+    obs.obs_output_release(output)
 
 
 def start_rec_cb(calldata):
@@ -46,8 +48,10 @@ def start_rec_cb(calldata):
 
 
 def file_changed_sh():
-    sh = obs.obs_output_get_signal_handler(obs.obs_frontend_get_recording_output())
+    output = obs.obs_frontend_get_recording_output()
+    sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "file_changed", file_changed_cb)
+    obs.obs_output_release(output)
 
 
 def file_changed_cb(calldata):
