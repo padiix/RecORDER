@@ -165,6 +165,7 @@ def check_if_hooked_and_update_title():
         if not gh_isHooked(calldata):
             obs.calldata_destroy(calldata)
             gameTitle = "Manual Recording"
+            print("Call data was empty, using default name for uncaptured windows...")
             return
         print("Hooked!")
         gameTitle = gh_title(calldata)
