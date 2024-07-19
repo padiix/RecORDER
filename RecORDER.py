@@ -172,6 +172,15 @@ def check_if_hooked_and_update_title():
     """
     global sourceUUID, gameTitle, defaultRecordingTitle
     
+    try:
+        if sourceUUID is None:
+            raise TypeError
+        
+    except TypeError:
+        print ("Source UUID is empty. Defaulting to \'Manual Recording\'")
+        gameTitle = defaultRecordingTitle
+        return 
+    
     calldata = get_hooked(sourceUUID)
     print("Checking if source is hooked to any window...")
     if calldata is not None:
@@ -243,6 +252,8 @@ def get_recording_source_uuid(configured_source):
         if scene_item:
             source = obs.obs_sceneitem_get_source(scene_item)
             source_uuid = obs.obs_source_get_uuid(source)
+        else:
+            source_uuid = None
 
     obs.obs_source_release(current_scene_as_source)
 
@@ -255,8 +266,10 @@ def refresh_source_uuid():
     if len(s_name) > 0:
         try:
             sourceUUID = get_recording_source_uuid(s_name)
-        except UnboundLocalError:
-            print("Source not found, please refresh and re-select")
+            if sourceUUID is None:
+                raise TypeError
+        except TypeError:
+            print("Source not selected, please refresh and re-select")
             sourceUUID = None
     else:
         sourceUUID = None
