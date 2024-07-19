@@ -23,9 +23,9 @@ sett = None
 
 # Values connected to recording
 currentRecording = None
-gameTitle = "Manual Recording"
+gameTitle = None
 isRecording = False
-
+defaultRecordingTitle = "Manual Recording"
 
 # SIGNAL-RELATED
 def start_rec_sh():
@@ -165,18 +165,19 @@ def replay_buffer_handler(event):
 
 
 def check_if_hooked_and_update_title():
-    global sourceUUID, gameTitle
     """Function checks if source selected by user is hooked to any window and takes the title of hooked window
 
     Raises:
         TypeError: Only triggers when sourceUUID is None and causes the title to reset to defaultRecordingName
     """
+    global sourceUUID, gameTitle, defaultRecordingTitle
+    
     calldata = get_hooked(sourceUUID)
     print("Checking if source is hooked to any window...")
     if calldata is not None:
         if not gh_isHooked(calldata):
             obs.calldata_destroy(calldata)
-            gameTitle = "Manual Recording"
+            gameTitle = defaultRecordingTitle
             print("Call data was empty, using default name for uncaptured windows...")
             return
         print("Hooked!")
@@ -397,7 +398,7 @@ def script_unload():
     # Fetching global variables
     global addTitleBool, recordingExtension, recordingExtensionMask, outputDir
     global sourceUUID, sett
-    global currentRecording, gameTitle, isRecording
+    global currentRecording, gameTitle, isRecording, defaultRecordingTitle
     # Clear Settings class
     addTitleBool = None
     recordingExtension = None
@@ -412,7 +413,7 @@ def script_unload():
     currentRecording = None
     gameTitle = None
     isRecording = False
-
+    defaultRecordingTitle = None
 
 class Recording:
     """Class that allows better control over files for the needs of this script"""
