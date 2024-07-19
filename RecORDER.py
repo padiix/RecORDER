@@ -29,6 +29,7 @@ isRecording = False
 
 # SIGNAL-RELATED
 def start_rec_sh():
+    """Signal handler function reacting to activation of recording."""
     output = obs.obs_frontend_get_recording_output()
     sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "activate", start_rec_cb)
@@ -36,6 +37,7 @@ def start_rec_sh():
 
 
 def start_rec_cb(calldata):
+    """Callback function reacting to the start_rec_sh signal handler function being triggered."""
     print("------------------------------")
     print("Recording has started...\n")
 
@@ -48,6 +50,7 @@ def start_rec_cb(calldata):
 
 
 def file_changed_sh():
+    """Signal handler function reacting to automatic file splitting."""
     output = obs.obs_frontend_get_recording_output()
     sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "file_changed", file_changed_cb)
@@ -55,6 +58,7 @@ def file_changed_sh():
 
 
 def file_changed_cb(calldata):
+    """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     print("------------------------------")
     print("Refreshing sourceUUID...")
     refresh_source_uuid()
@@ -85,6 +89,7 @@ def file_changed_cb(calldata):
 
 
 def stop_rec_sh():
+    """Signal handler function reacting to stopping a recording."""
     output = obs.obs_frontend_get_recording_output()
     sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "stop", stop_rec_cb)
@@ -92,6 +97,7 @@ def stop_rec_sh():
 
 
 def stop_rec_cb(calldata):
+    """Callback function reacting to the stop_rec_sh signal handler function being triggered."""
     print("------------------------------")
     print("Refreshing sourceUUID...")
     refresh_source_uuid()
@@ -136,6 +142,7 @@ def stop_rec_cb(calldata):
 
 
 def replay_buffer_handler(event):
+    """Event function reacting to OBS Event of saving the replay buffer."""
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
         print("------------------------------")
         print("Saving the Replay Buffer...")
@@ -159,6 +166,11 @@ def replay_buffer_handler(event):
 
 def check_if_hooked_and_update_title():
     global sourceUUID, gameTitle
+    """Function checks if source selected by user is hooked to any window and takes the title of hooked window
+
+    Raises:
+        TypeError: Only triggers when sourceUUID is None and causes the title to reset to defaultRecordingName
+    """
     calldata = get_hooked(sourceUUID)
     print("Checking if source is hooked to any window...")
     if calldata is not None:
@@ -214,6 +226,11 @@ def remove_unusable_title_characters(title):
 
 
 def get_recording_source_uuid(configured_source):
+    """Checks if the source selected by user exists in the scene and returns found information.
+
+    Returns:
+        UUID: Source UUID or None
+    """
     global sourceUUID
     current_scene_as_source = obs.obs_frontend_get_current_scene()
 
