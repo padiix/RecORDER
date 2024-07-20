@@ -201,17 +201,6 @@ def get_hooked(uuid):
     ph = obs.obs_source_get_proc_handler(source)
     obs.proc_handler_call(ph, "get_hooked", cd)
     obs.obs_source_release(source)
-    # Possibly this return crashes the OBS if not found the source (see issue https://github.com/padiix/RecORDER/issues/3)
-    # TODO: Fix issue of null value on scene change 
-    # 
-    # Options to fix this issue:
-    # 1. ❎ (Not enough flexibility) Watch if not null value - if no, print out message in log
-    # 2. ✅ Keep values in outside file [like .json] and remember the source values. 
-    #        On load - check if file was created and load settings based on the settings file. 
-    #        If scene change detected - reset the source value
-    #        When no file found - load default values.
-    #        Create the .json file when user customizes the script - ex. on selection of a source.
-    #        (Optional) Add other parts of script settings into the file.
     return cd
 
 
