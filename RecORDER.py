@@ -428,21 +428,6 @@ def script_unload():
     isRecording = False
     defaultRecordingTitle = None
 
-class SettingsFile:
-    def __init__(self):
-        pass
-    
-    def open_settings_file():
-        pass
-    
-    def write_to_settings_file():
-        pass
-    
-    def close_settings_file():
-        pass
-
-            
-
 class Recording:
     """Class that allows better control over files for the needs of this script"""
 
