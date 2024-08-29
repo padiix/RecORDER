@@ -28,26 +28,6 @@ isRecording = False
 defaultRecordingTitle = "Manual Recording"
 
 # SIGNAL-RELATED
-def start_rec_sh():
-    """Signal handler function reacting to activation of recording."""
-    output = obs.obs_frontend_get_recording_output()
-    sh = obs.obs_output_get_signal_handler(output)
-    obs.signal_handler_connect(sh, "activate", start_rec_cb)
-    obs.obs_output_release(output)
-
-
-def start_rec_cb(calldata):
-    """Callback function reacting to the start_rec_sh signal handler function being triggered."""
-    print("------------------------------")
-    print("Recording has started...\n")
-
-    global isRecording, currentRecording
-    isRecording = True
-    currentRecording = None
-    print(f"Recording started: {isRecording}")
-    print(f"CurrentRecording is {currentRecording}")
-    print("------------------------------")
-
 
 def file_changed_sh():
     """Signal handler function reacting to automatic file splitting."""
@@ -139,6 +119,32 @@ def stop_rec_cb(calldata):
     print(f"Output signal returned: {output_code}")
     isRecording = False
     print("------------------------------")
+
+# EVENTS
+
+def start_recording_handler(event):
+    """Event function reacting to OBS Event of saving the replay buffer."""
+    if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
+        print("------------------------------")
+        print("Recording has started...\n")
+
+        print("Reloading the signals!\n")
+        file_changed_sh()   # Respond to splitting the recording (ex. automatic recording split)
+        stop_rec_sh()       # Respond to stopping the recording
+        print("Signals reloaded!\n")
+        
+        print("Reseting the recording related values...\n")
+        global isRecording, currentRecording
+        global gameTitle, defaultRecordingTitle
+        isRecording = True
+        currentRecording = None
+        gameTitle = defaultRecordingTitle
+        print(f"Recording started: {isRecording}")
+        print(f"CurrentRecording is {currentRecording}")
+        print(f"Game title set to {gameTitle}")
+        print("------------------------------")
+        
+        
 
 
 def replay_buffer_handler(event):
@@ -277,12 +283,12 @@ def script_load(settings):
     sett = settings
 
     # Loading in Signals
-    start_rec_sh()  # Respond to starting recording
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
     stop_rec_sh()  # Respond to stopping the recording
 
     # Loading in Frontend events to deal with Replay Buffer saving
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
+    obs.obs_frontend_add_event_callback(start_recording_handler)
 
 
 def script_defaults(settings):
@@ -508,5 +514,13 @@ class Recording:
         """Moves the recording to new location using os.renames"""
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
+
+        # # For all I know this file, which is not used at all, but it stalls enough that the move action starts working, fucking lmao
+        textFile = oldPath[:-3] + "txt"
+
+        with open(textFile, "w") as f:
+            f.write(newPath)
+            
+        os.remove(textFile)
 
         os.renames(oldPath, newPath)
