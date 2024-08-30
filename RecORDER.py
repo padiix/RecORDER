@@ -153,16 +153,16 @@ def check_if_hooked_and_update_title():
         TypeError: Only triggers when sourceUUID is None and causes the title to reset to defaultRecordingName
     """
     global sourceUUID, gameTitle, defaultRecordingTitle
-    
+
     try:
         if sourceUUID is None:
             raise TypeError
-        
+
     except TypeError:
-        print ("Source UUID is empty. Defaulting to \'Manual Recording\'")
+        print("Source UUID is empty. Defaulting to 'Manual Recording'")
         gameTitle = defaultRecordingTitle
-        return 
-    
+        return
+
     calldata = get_hooked(sourceUUID)
     print("Checking if source is hooked to any window...")
     if calldata is not None:
@@ -248,8 +248,20 @@ def refresh_source_uuid():
 
 def find_latest_file(folder_path, file_type):
     files = glob.glob(folder_path + file_type)
-    max_file = max(files, key=os.path.getctime)
-    return os.path.normpath(max_file)
+    if files:
+        max_file = max(files, key=os.path.getctime)
+        return os.path.normpath(max_file)
+    else:
+        textFile = script_path() + "latest_file.txt"
+        text = "".join(str(x) for x in files)
+        with open(textFile, "w") as f:
+            f.write(text)
+
+        with open(textFile, "r") as f:
+            print(f.read())
+
+        os.remove(textFile)
+        return find_latest_file(folder_path, file_type)
 
 
 # OBS FUNCTIONS
@@ -491,12 +503,14 @@ class Recording:
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        # # For all I know this file, which is not used at all, but it stalls enough that the move action starts working, fucking lmao
-        textFile = oldPath[:-3] + "txt"
+        textFile = script_path() + "remember_move.txt"
 
         with open(textFile, "w") as f:
             f.write(newPath)
-            
+
+        with open(textFile, "r") as f:
+            newPath = f.read()
+
         os.remove(textFile)
 
         os.renames(oldPath, newPath)
