@@ -29,6 +29,7 @@ defaultRecordingTitle = "Manual Recording"
 
 # SIGNAL-RELATED
 
+
 def file_changed_sh():
     """Signal handler function reacting to automatic file splitting."""
     output = obs.obs_frontend_get_recording_output()
@@ -68,71 +69,19 @@ def file_changed_cb(calldata):
     print("------------------------------")
 
 
-def stop_rec_sh():
-    """Signal handler function reacting to stopping a recording."""
-    output = obs.obs_frontend_get_recording_output()
-    sh = obs.obs_output_get_signal_handler(output)
-    obs.signal_handler_connect(sh, "stop", stop_rec_cb)
-    obs.obs_output_release(output)
-
-
-def stop_rec_cb(calldata):
-    """Callback function reacting to the stop_rec_sh signal handler function being triggered."""
-    print("------------------------------")
-    print("Refreshing sourceUUID...")
-    refresh_source_uuid()
-
-    print("Recording has stopped, moving the last file into right folder...")
-    print("Running get_hooked procedure to get current app title...")
-    check_if_hooked_and_update_title()
-
-    global currentRecording, isRecording, recordingExtensionMask, outputDir
-    if currentRecording is None:
-        currentRecording = find_latest_file(outputDir, recordingExtensionMask)
-
-    rec = Recording(customPath=currentRecording)
-    rec.create_new_folder()
-    rec.remember_and_move()
-
-    print("Job's done. The file was moved.")
-    print(f"Recording: {rec.get_filename()}")
-    print(f"New path: {rec.get_newPath()}")
-
-    currentRecording = None
-
-    OBS_OUTPUT_CODES = dict(
-        [
-            (0, "OBS_OUTPUT_SUCCESS"),
-            (1, "OBS_OUTPUT_BAD_PATH"),
-            (2, "OBS_OUTPUT_CONNECT_FAILED"),
-            (3, "OBS_OUTPUT_INVALID_STREAM"),
-            (4, "OBS_OUTPUT_ERROR"),
-            (5, "OBS_OUTPUT_DISCONNECTED"),
-            (6, "OBS_OUTPUT_UNSUPPORTED"),
-            (7, "OBS_OUTPUT_NO_SPACE"),
-            (8, "OBS_OUTPUT_ENCODE_ERROR"),
-        ]
-    )
-
-    output_code = OBS_OUTPUT_CODES.get(obs.calldata_int(calldata, "code"))
-
-    print(f"Output signal returned: {output_code}")
-    isRecording = False
-    print("------------------------------")
-
 # EVENTS
 
+
 def start_recording_handler(event):
-    """Event function reacting to OBS Event of saving the replay buffer."""
+    """Event function reacting to OBS Event of starting the recording."""
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
         print("------------------------------")
         print("Recording has started...\n")
 
         print("Reloading the signals!\n")
-        file_changed_sh()   # Respond to splitting the recording (ex. automatic recording split)
-        stop_rec_sh()       # Respond to stopping the recording
+        file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
         print("Signals reloaded!\n")
-        
+
         print("Reseting the recording related values...\n")
         global isRecording, currentRecording
         global gameTitle, defaultRecordingTitle
@@ -143,8 +92,35 @@ def start_recording_handler(event):
         print(f"CurrentRecording is {currentRecording}")
         print(f"Game title set to {gameTitle}")
         print("------------------------------")
-        
-        
+
+
+def recording_stop_handler(event):
+    """Event function reacting to OBS Event of recording fully stopping."""
+    if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+        print("------------------------------")
+        print("Refreshing sourceUUID...")
+        refresh_source_uuid()
+
+        print("Recording has stopped, moving the last file into right folder...")
+        print("Running get_hooked procedure to get current app title...")
+        check_if_hooked_and_update_title()
+
+        global currentRecording, isRecording, recordingExtensionMask, outputDir
+        if currentRecording is None:
+            currentRecording = find_latest_file(outputDir, recordingExtensionMask)
+
+        rec = Recording(customPath=currentRecording)
+        rec.create_new_folder()
+        rec.remember_and_move()
+
+        print("Job's done. The file was moved.")
+        print(f"Recording: {rec.get_filename()}")
+        print(f"New path: {rec.get_newPath()}")
+
+        currentRecording = None
+
+        isRecording = False
+        print("------------------------------")
 
 
 def replay_buffer_handler(event):
@@ -284,11 +260,11 @@ def script_load(settings):
 
     # Loading in Signals
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
-    stop_rec_sh()  # Respond to stopping the recording
 
     # Loading in Frontend events to deal with Replay Buffer saving
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(start_recording_handler)
+    obs.obs_frontend_add_event_callback(recording_stop_handler)
 
 
 def script_defaults(settings):
@@ -336,7 +312,6 @@ def populate_list_property_with_source_names(list_property):
 
 
 def refresh_list_and_get_uuid(props, prop, *args, **kwargs):
-
     lst = obs.obs_properties_get(props, "source")
     populate_list_property_with_source_names(lst)
 
@@ -422,6 +397,7 @@ def script_unload():
     gameTitle = None
     isRecording = False
     defaultRecordingTitle = None
+
 
 class Recording:
     """Class that allows better control over files for the needs of this script"""
