@@ -11,27 +11,35 @@ from pathlib import Path
 # TODO: Implement a way for storing the UUID and Signals that react to it's deletion, etc. (Not figured out by me yet)
 # TODO: Config instead of the Classes storing the data (Need to think if it's necessary, but probably not)
 
+
 # Global variables
+
 addTitleBool = None
 recordingExtension = None
 recordingExtensionMask = None
 outputDir = None
 
+
 # Values supporting smooth working and less calls
+
 sourceUUID = None
 sett = None
 
+
 # Values connected to recording
+
 currentRecording = None
 gameTitle = None
 isRecording = False
 defaultRecordingTitle = "Manual Recording"
+
 
 # SIGNAL-RELATED
 
 
 def file_changed_sh():
     """Signal handler function reacting to automatic file splitting."""
+
     output = obs.obs_frontend_get_recording_output()
     sh = obs.obs_output_get_signal_handler(output)
     obs.signal_handler_connect(sh, "file_changed", file_changed_cb)
@@ -52,6 +60,7 @@ def file_changed_cb(calldata):
 
     # GETTING THE PREVIOUS FILE FIRST
     # I'm not happy with that, but it will have to do
+
     global currentRecording, recordingExtensionMask, outputDir
     currentRecording = find_latest_file(outputDir, recordingExtensionMask)
     print(f"Saved recording: {currentRecording}")
@@ -74,20 +83,47 @@ def file_changed_cb(calldata):
 
 def start_recording_handler(event):
     """Event function reacting to OBS Event of starting the recording."""
+
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
         print("------------------------------")
         print("Recording has started...\n")
-
         print("Reloading the signals!\n")
-        file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
-        print("Signals reloaded!\n")
 
+        file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
+
+        print("Signals reloaded!\n")
         print("Reseting the recording related values...\n")
+
         global isRecording, currentRecording
         global gameTitle, defaultRecordingTitle
+
         isRecording = True
         currentRecording = None
         gameTitle = defaultRecordingTitle
+
+        print(f"Recording started: {isRecording}")
+        print(f"CurrentRecording is {currentRecording}")
+        print(f"Game title set to {gameTitle}")
+        print("------------------------------")
+
+
+def start_buffer_handler(event):
+    """Event function reacting to OBS Event of starting the replay buffer."""
+
+    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING:
+        print("------------------------------")
+        print("Replay buffer has started...\n")
+        print("Reloading the signals!\n")
+        print("Signals reloaded!\n")
+        print("Reseting the recording related values...\n")
+
+        global isRecording, currentRecording
+        global gameTitle, defaultRecordingTitle
+
+        isRecording = True
+        currentRecording = None
+        gameTitle = defaultRecordingTitle
+
         print(f"Recording started: {isRecording}")
         print(f"CurrentRecording is {currentRecording}")
         print(f"Game title set to {gameTitle}")
@@ -195,11 +231,14 @@ def gh_title(calldata) -> str:
 
 
 # HELPER FUNCTIONS
+
 def remove_unusable_title_characters(title):
     # Remove non-alphanumeric characters (ex. ':')
     title = re.sub(r"[^A-Za-z0-9 ]+", "", title)
+
     # Remove whitespaces at the end
     title = "".join(title.rstrip())
+
     # Remove additional whitespaces
     title = " ".join(title.split())
 
@@ -212,7 +251,9 @@ def get_recording_source_uuid(configured_source):
     Returns:
         UUID: Source UUID or None
     """
+
     global sourceUUID
+
     current_scene_as_source = obs.obs_frontend_get_current_scene()
 
     if current_scene_as_source:
@@ -234,6 +275,7 @@ def get_recording_source_uuid(configured_source):
 def refresh_source_uuid():
     global sett, sourceUUID
     s_name = obs.obs_data_get_string(sett, "source")
+
     if len(s_name) > 0:
         try:
             sourceUUID = get_recording_source_uuid(s_name)
@@ -265,6 +307,7 @@ def find_latest_file(folder_path, file_type):
 
 
 # OBS FUNCTIONS
+
 def script_load(settings):
     # Loading in settings
     global sett
@@ -274,6 +317,8 @@ def script_load(settings):
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
     # Loading in Frontend events to deal with Replay Buffer saving
+
+    obs.obs_frontend_add_event_callback(start_buffer_handler)
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(start_recording_handler)
     obs.obs_frontend_add_event_callback(recording_stop_handler)
@@ -285,12 +330,14 @@ def script_defaults(settings):
 
 def script_update(settings):
     global addTitleBool, recordingExtension, recordingExtensionMask, outputDir
+
     # Fetching the Settings
     addTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
     outputDir = os.path.normpath(obs.obs_data_get_string(settings, "outputdir"))
 
     recordingExtension = obs.obs_data_get_string(settings, "extension")
     recordingExtensionMask = "\*" + recordingExtension
+
     print("Updated the settings!")
 
 
