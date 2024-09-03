@@ -2,6 +2,7 @@ import glob
 import obspython as obs  # type: ignore
 import re
 import os
+import time
 from pathlib import Path
 
 # Rewriting whole script using the Signals!
@@ -550,14 +551,6 @@ class Recording:
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        textFile = script_path() + "remember_move.txt"
-
-        with open(textFile, "w") as f:
-            f.write(newPath)
-
-        with open(textFile, "r") as f:
-            newPath = f.read()
-
-        os.remove(textFile)
+        time.sleep(0.01)
 
         os.renames(oldPath, newPath)
