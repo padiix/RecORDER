@@ -290,6 +290,7 @@ def refresh_source_uuid():
 
 
 def find_latest_file(folder_path, file_type):
+    time.sleep(0.01)
     files = glob.glob(folder_path + file_type)
     if files:
         max_file = max(files, key=os.path.getctime)
