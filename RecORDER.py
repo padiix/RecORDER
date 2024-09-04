@@ -18,6 +18,8 @@ from pathlib import Path
 addTitleBool = None
 recordingExtension = None
 recordingExtensionMask = None
+screenshotExtension = None
+screenshotExtensionMask = None
 outputDir = None
 
 
@@ -175,6 +177,27 @@ def replay_buffer_handler(event):
         print(f"Old path: {rec.get_oldPath()}")
         print(f"New path: {rec.get_newPath()}")
         print("------------------------------")
+        
+def screenshot_handler_event(event):
+    """Event function reacting to OBS Event of taking the screenshot."""
+    
+    if event == obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN:
+        print("------------------------------")
+        print("Taking the screenshot...")
+
+        print("Refreshing sourceUUID...")
+        refresh_source_uuid()
+
+        print("Running get_hooked procedure to get current app title...")
+        check_if_hooked_and_update_title()
+        
+        scrnst = Screenshot()
+        scrnst.create_new_folder()
+        scrnst.remember_and_move()
+        
+        print(f"Old path: {scrnst.get_oldPath()}")
+        print(f"New path: {scrnst.get_newPath()}")
+        print("------------------------------")
 
 
 def check_if_hooked_and_update_title():
@@ -309,14 +332,16 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(start_recording_handler)
     obs.obs_frontend_add_event_callback(recording_stop_handler)
+    obs.obs_frontend_add_event_callback(screenshot_handler_event)
 
 
 def script_defaults(settings):
     obs.obs_data_set_default_string(settings, "extension", "mkv")
+    obs.obs_data_set_default_string(settings, "ss_extension", "png")
 
 
 def script_update(settings):
-    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask
 
     # Fetching the Settings
     addTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
@@ -324,6 +349,9 @@ def script_update(settings):
 
     recordingExtension = obs.obs_data_get_string(settings, "extension")
     recordingExtensionMask = "\*" + recordingExtension
+    
+    screenshotExtension = obs.obs_data_get_string(settings, "ss_extension")
+    screenshotExtensionMask = "\*" + screenshotExtension
 
     print("Updated the settings!")
 
@@ -419,19 +447,25 @@ def script_properties():
     obs.obs_properties_add_text(
         props, "extension", "Recording extension", obs.OBS_TEXT_DEFAULT
     )
+    
+    obs.obs_properties_add_text(
+        props, "ss_extension", "Screenshot extension", obs.OBS_TEXT_DEFAULT
+    )
 
     return props
 
 
 def script_unload():
     # Fetching global variables
-    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask
     global sourceUUID, sett
     global currentRecording, gameTitle, isRecording, defaultRecordingTitle
     # Clear Settings class
     addTitleBool = None
     recordingExtension = None
     recordingExtensionMask = None
+    screenshotExtension = None
+    screenshotExtensionMask = None
     outputDir = None
 
     # Clear cached settings and important global values
@@ -544,6 +578,48 @@ class Recording:
 
         os.renames(oldPath, newPath)
         
+class Screenshot:
+    """Class that allows better control over screenshots for the needs of this script"""
+
+    def __init__(self, customPath=None) -> None:
+        """Create a file based on either specified path or path that was configured in Scripts settings
+
+        Args:
+            customPath (str): Path to a file that needs to be moved
+            isReplay (bool): Set to true if handled recording is from replay buffer
+        """
+        global screenshotExtensionMask, outputDir
+
+        self.screenshotsFolderName = "Screenshots"
+
+        # Allow to specify a custom path where the file is located.
+        if customPath is not None:
+            self.path = customPath
+        else:
+            self.path = find_latest_file(outputDir, screenshotExtensionMask)
+
+        # Prepare paths needed for functions
+        self.dir = os.path.dirname(self.path)
+        self.rawfile = os.path.basename(self.path)
+
+    def get_filename(self) -> str:
+        """Returns the file name
+
+        Returns:
+            str: name of a file
+        """
+        return self.rawfile
+
+    def get_newFolder(self) -> str:
+        """Returns a path to a folder where recording will be moved to
+        If recording is a replay buffer, it will return the path towards the replays folder inside of folder above
+
+        Returns:
+            str: name of the new folder where the recording will be located
+        """
+        
+        return os.path.join(self.dir, gameTitle, self.screenshotsFolderName)
+
     def get_newFilename(self) -> str:
         """Returns the name of a file based on the choice of the user
         If user decided to have game title before recording name, it will add it.
