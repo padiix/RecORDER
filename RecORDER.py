@@ -375,14 +375,19 @@ def UUID_of_sel_src(props, prop, *args, **kwargs):
 
 
 def populate_list_property_with_source_names(list_property):
+    current_scene_as_source = obs.obs_frontend_get_current_scene()
+    scene = obs.obs_scene_from_source(current_scene_as_source)
+    
     obs.obs_property_list_clear(list_property)
-    sources = obs.obs_enum_sources()
+    sceneitems = obs.obs_scene_enum_items(scene)
     obs.obs_property_list_clear(list_property)
     obs.obs_property_list_add_string(list_property, "", "")
-    for source in sources:
+    for item in sceneitems:
+        source = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(source)
         obs.obs_property_list_add_string(list_property, name, name)
-    obs.source_list_release(sources)
+    obs.source_list_release(sceneitems)
+    obs.obs_source_release(current_scene_as_source)
 
 
 def refresh_list_and_get_uuid(props, prop, *args, **kwargs):
