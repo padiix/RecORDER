@@ -59,11 +59,9 @@ def file_changed_cb(calldata):
     print("Recording automatic splitting detected!")
     print("Moving saved recording...")
 
-    # GETTING THE PREVIOUS FILE FIRST
-    # I'm not happy with that, but it will have to do
-
     global currentRecording, recordingExtensionMask, outputDir
     currentRecording = find_latest_file(outputDir, recordingExtensionMask)
+    
     print(f"Saved recording: {currentRecording}")
 
     rec = Recording(customPath=currentRecording)
@@ -142,11 +140,9 @@ def recording_stop_handler(event):
         print("Running get_hooked procedure to get current app title...")
         check_if_hooked_and_update_title()
 
-        global currentRecording, isRecording, recordingExtensionMask, outputDir
-        if currentRecording is None:
-            currentRecording = find_latest_file(outputDir, recordingExtensionMask)
+        global currentRecording, isRecording
 
-        rec = Recording(customPath=currentRecording)
+        rec = Recording()
         rec.create_new_folder()
         rec.remember_and_move()
 
@@ -173,9 +169,7 @@ def replay_buffer_handler(event):
         check_if_hooked_and_update_title()
 
         rec = Recording(isReplay=True)
-
         rec.create_new_folder()
-
         rec.remember_and_move()
 
         print(f"Old path: {rec.get_oldPath()}")
@@ -310,8 +304,7 @@ def script_load(settings):
     # Loading in Signals
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
-    # Loading in Frontend events to deal with Replay Buffer saving
-
+    # Loading in Frontend events
     obs.obs_frontend_add_event_callback(start_buffer_handler)
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(start_recording_handler)
@@ -462,9 +455,8 @@ class Recording:
             customPath (str): Path to a file that needs to be moved
             isReplay (bool): Set to true if handled recording is from replay buffer
         """
-        global recordingExtension, recordingExtensionMask, outputDir
+        global recordingExtensionMask, outputDir
 
-        self.dataExtension = "." + recordingExtension
         self.replaysFolderName = "Replays"
 
         # If this object is created during Replay Buffer handling, it will do additional stuff needed
@@ -476,8 +468,10 @@ class Recording:
         # Allow to specify a custom path where the file is located.
         if customPath is not None:
             self.path = customPath
-        else:
-            self.path = find_latest_file(outputDir, recordingExtensionMask)
+        elif self.isReplay:
+            self.path = obs.obs_frontend_get_last_replay()
+        elif not self.isReplay:
+            self.path = obs.obs_frontend_get_last_recording()
 
         # Prepare paths needed for functions
         self.dir = os.path.dirname(self.path)
@@ -489,7 +483,7 @@ class Recording:
         Returns:
             str: name of a file
         """
-        return self.rawfile[: -len(self.dataExtension)] + self.dataExtension
+        return self.rawfile
 
     def get_newFolder(self) -> str:
         """Returns a path to a folder where recording will be moved to
@@ -498,12 +492,58 @@ class Recording:
         Returns:
             str: name of the new folder where the recording will be located
         """
+        global gameTitle
         if self.isReplay:
-            global gameTitle
             return os.path.join(self.dir, gameTitle, self.replaysFolderName)
         else:
             return os.path.join(self.dir, gameTitle)
 
+
+    def get_newFilename(self) -> str:
+        """Returns the name of a file based on the choice of the user
+        If user decided to have game title before recording name, it will add it.
+
+        Returns:
+            str: name of the recording
+        """
+        global addTitleBool
+        if addTitleBool:
+            global gameTitle
+            return gameTitle + " - " + self.get_filename()
+        else:
+            return self.get_filename()
+
+    def get_oldPath(self) -> str:
+        """Returns previous path the file was located in
+
+        Returns:
+            str: previous path of file
+        """
+        return os.path.join(self.dir, self.get_filename())
+
+    def get_newPath(self) -> str:
+        """Returns current path where file is located
+
+        Returns:
+            str: current path of file
+        """
+        return os.path.join(self.get_newFolder(), self.get_newFilename())
+
+    def create_new_folder(self) -> None:
+        """Creates a new folder based on title of the captured fullscreen application"""
+        if not os.path.exists(self.get_newFolder()):
+            os.makedirs(self.get_newFolder())
+
+    def remember_and_move(self) -> None:
+        """Moves the recording to new location using os.renames"""
+        
+        oldPath = self.get_oldPath()
+        newPath = self.get_newPath()
+
+        time.sleep(0.01)
+
+        os.renames(oldPath, newPath)
+        
     def get_newFilename(self) -> str:
         """Returns the name of a file based on the choice of the user
         If user decided to have game title before recording name, it will add it.
