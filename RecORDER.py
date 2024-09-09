@@ -21,6 +21,7 @@ recordingExtensionMask = None
 screenshotExtension = None
 screenshotExtensionMask = None
 outputDir = None
+file_changed_sh_ref = None
 
 
 # Values supporting smooth working and less calls
@@ -42,16 +43,19 @@ defaultRecordingTitle = "Manual Recording"
 
 def file_changed_sh():
     """Signal handler function reacting to automatic file splitting."""
-
+    global file_changed_sh_ref
+    if file_changed_sh_ref:
+        return
     output = obs.obs_frontend_get_recording_output()
-    sh = obs.obs_output_get_signal_handler(output)
-    obs.signal_handler_connect(sh, "file_changed", file_changed_cb)
+    file_changed_sh_ref = obs.obs_output_get_signal_handler(output)
+    obs.signal_handler_connect(file_changed_sh_ref, "file_changed", file_changed_cb)
     obs.obs_output_release(output)
 
 
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     print("------------------------------")
+    # print("[file_changed_cb]")
     print("Refreshing sourceUUID...")
     refresh_source_uuid()
 
@@ -62,7 +66,7 @@ def file_changed_cb(calldata):
     print("Moving saved recording...")
 
     global currentRecording, recordingExtensionMask, outputDir
-    currentRecording = find_latest_file(outputDir, recordingExtensionMask, 0.01)
+    currentRecording = find_latest_file(outputDir, recordingExtensionMask)
     
     print(f"Saved recording: {currentRecording}")
 
@@ -72,10 +76,6 @@ def file_changed_cb(calldata):
 
     print("Done!")
     print(f"New path: {rec.get_newPath()}")
-
-    currentRecording = None
-    currentRecording = obs.calldata_string(calldata, "next_file")
-    print(f"Current file: {currentRecording}")
     print("------------------------------")
 
 
@@ -87,6 +87,7 @@ def start_recording_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
         print("------------------------------")
+        # print("[start_recording_handler]")
         print("Recording has started...\n")
         print("Reloading the signals!\n")
 
@@ -113,6 +114,7 @@ def start_buffer_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING:
         print("------------------------------")
+        # print("[start_buffer_handler]")
         print("Replay buffer has started...\n")
         print("Reloading the signals!\n")
         print("Signals reloaded!\n")
@@ -135,6 +137,7 @@ def recording_stop_handler(event):
     """Event function reacting to OBS Event of recording fully stopping."""
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
         print("------------------------------")
+        # print("[recording_stop_handler]")
         print("Refreshing sourceUUID...")
         refresh_source_uuid()
 
@@ -162,6 +165,7 @@ def replay_buffer_handler(event):
     """Event function reacting to OBS Event of saving the replay buffer."""
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
         print("------------------------------")
+        # print("[replay_buffer_handler]")
         print("Saving the Replay Buffer...")
 
         print("Refreshing sourceUUID...")
@@ -183,6 +187,7 @@ def screenshot_handler_event(event):
     
     if event == obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN:
         print("------------------------------")
+        # print("[screenshot_handler_event]")
         print("Taking the screenshot...")
 
         print("Refreshing sourceUUID...")
@@ -208,6 +213,8 @@ def check_if_hooked_and_update_title():
     """
     global sourceUUID, gameTitle, defaultRecordingTitle
 
+    # print("[check_if_hooked_and_update_title]")
+    
     try:
         if sourceUUID is None:
             raise TypeError
@@ -226,7 +233,11 @@ def check_if_hooked_and_update_title():
             print("Call data was empty, using default name for uncaptured windows...")
             return
         print("Hooked!")
-        gameTitle = gh_title(calldata)
+        try:
+            gameTitle = gh_title(calldata)
+        except TypeError:
+            print("Failed to get title, using default name - restart OBS or captured app.")
+            gameTitle = defaultRecordingTitle
         print(f"Current GameTitle: {gameTitle}")
     obs.calldata_destroy(calldata)
 
@@ -294,6 +305,8 @@ def refresh_source_uuid():
     global sett, sourceUUID
     s_name = obs.obs_data_get_string(sett, "source")
 
+    # print("[refresh_source_uuid]")
+
     if len(s_name) > 0:
         try:
             sourceUUID = get_recording_source_uuid(s_name)
@@ -305,19 +318,12 @@ def refresh_source_uuid():
     else:
         sourceUUID = None
 
-
-def find_latest_file(folder_path, file_type, sleepytime):
-    try:
-        time.sleep(sleepytime)
-        files = glob.glob(folder_path + file_type)
-        if files:
-            max_file = max(files, key=os.path.getctime)
-            return os.path.normpath(max_file)
-        else:
-            time.sleep(sleepytime)
-            return find_latest_file(folder_path, file_type, sleepytime + 0.01)
-    except RecursionError:
-        print("If you got here, the author should consider threading... fuck")
+            
+def find_latest_file(folder_path, file_type):
+    files = glob.glob(folder_path + file_type)
+    if files:
+        max_file = max(files, key=os.path.getctime)
+        return os.path.normpath(max_file)
 
 # OBS FUNCTIONS
 
@@ -464,7 +470,7 @@ def script_properties():
 
 def script_unload():
     # Fetching global variables
-    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask, file_changed_sh_ref
     global sourceUUID, sett
     global currentRecording, gameTitle, isRecording, defaultRecordingTitle
     # Clear Settings class
@@ -474,6 +480,7 @@ def script_unload():
     screenshotExtension = None
     screenshotExtensionMask = None
     outputDir = None
+    file_changed_sh_ref = None
 
     # Clear cached settings and important global values
     sourceUUID = None
@@ -575,13 +582,13 @@ class Recording:
         if not os.path.exists(self.get_newFolder()):
             os.makedirs(self.get_newFolder())
 
-    def remember_and_move(self) -> None:
+    def remember_and_move(self, ttw=0.01) -> None:
         """Moves the recording to new location using os.renames"""
         
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        time.sleep(0.01)
+        time.sleep(ttw)
 
         os.renames(oldPath, newPath)
         
@@ -597,6 +604,8 @@ class Screenshot:
         """
         global screenshotExtensionMask, outputDir
 
+        self.screenshotsPath = outputDir
+        self.screenshotsExtension = screenshotExtensionMask
         self.screenshotsFolderName = "Screenshots"
 
         # Allow to specify a custom path where the file is located.
