@@ -62,7 +62,7 @@ def file_changed_cb(calldata):
     print("Moving saved recording...")
 
     global currentRecording, recordingExtensionMask, outputDir
-    currentRecording = find_latest_file(outputDir, recordingExtensionMask)
+    currentRecording = find_latest_file(outputDir, recordingExtensionMask, 0.01)
     
     print(f"Saved recording: {currentRecording}")
 
@@ -306,16 +306,18 @@ def refresh_source_uuid():
         sourceUUID = None
 
 
-def find_latest_file(folder_path, file_type):
-    time.sleep(0.01)
-    files = glob.glob(folder_path + file_type)
-    if files:
-        max_file = max(files, key=os.path.getctime)
-        return os.path.normpath(max_file)
-    else:
-        time.sleep(0.01)
-        return find_latest_file(folder_path, file_type)
-
+def find_latest_file(folder_path, file_type, sleepytime):
+    try:
+        time.sleep(sleepytime)
+        files = glob.glob(folder_path + file_type)
+        if files:
+            max_file = max(files, key=os.path.getctime)
+            return os.path.normpath(max_file)
+        else:
+            time.sleep(sleepytime)
+            return find_latest_file(folder_path, file_type, sleepytime + 0.01)
+    except RecursionError:
+        print("If you got here, the author should consider threading... fuck")
 
 # OBS FUNCTIONS
 
@@ -601,7 +603,7 @@ class Screenshot:
         if customPath is not None:
             self.path = customPath
         else:
-            self.path = find_latest_file(outputDir, screenshotExtensionMask)
+            self.path = find_latest_file(outputDir, screenshotExtensionMask, 0.01)
 
         # Prepare paths needed for functions
         self.dir = os.path.dirname(self.path)
