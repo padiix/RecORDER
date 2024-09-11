@@ -21,6 +21,7 @@ recordingExtensionMask = None
 screenshotExtension = None
 screenshotExtensionMask = None
 outputDir = None
+file_changed_sh_ref = None
 
 
 # Values supporting smooth working and less calls
@@ -42,16 +43,19 @@ defaultRecordingTitle = "Manual Recording"
 
 def file_changed_sh():
     """Signal handler function reacting to automatic file splitting."""
-
+    global file_changed_sh_ref
+    if file_changed_sh_ref:
+        return
     output = obs.obs_frontend_get_recording_output()
-    sh = obs.obs_output_get_signal_handler(output)
-    obs.signal_handler_connect(sh, "file_changed", file_changed_cb)
+    file_changed_sh_ref = obs.obs_output_get_signal_handler(output)
+    obs.signal_handler_connect(file_changed_sh_ref, "file_changed", file_changed_cb)
     obs.obs_output_release(output)
 
 
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     print("------------------------------")
+    # print("[file_changed_cb]")
     print("Refreshing sourceUUID...")
     refresh_source_uuid()
 
@@ -72,10 +76,6 @@ def file_changed_cb(calldata):
 
     print("Done!")
     print(f"New path: {rec.get_newPath()}")
-
-    currentRecording = None
-    currentRecording = obs.calldata_string(calldata, "next_file")
-    print(f"Current file: {currentRecording}")
     print("------------------------------")
 
 
@@ -87,6 +87,7 @@ def start_recording_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
         print("------------------------------")
+        # print("[start_recording_handler]")
         print("Recording has started...\n")
         print("Reloading the signals!\n")
 
@@ -113,6 +114,7 @@ def start_buffer_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING:
         print("------------------------------")
+        # print("[start_buffer_handler]")
         print("Replay buffer has started...\n")
         print("Reloading the signals!\n")
         print("Signals reloaded!\n")
@@ -135,6 +137,7 @@ def recording_stop_handler(event):
     """Event function reacting to OBS Event of recording fully stopping."""
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
         print("------------------------------")
+        # print("[recording_stop_handler]")
         print("Refreshing sourceUUID...")
         refresh_source_uuid()
 
@@ -162,6 +165,7 @@ def replay_buffer_handler(event):
     """Event function reacting to OBS Event of saving the replay buffer."""
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
         print("------------------------------")
+        # print("[replay_buffer_handler]")
         print("Saving the Replay Buffer...")
 
         print("Refreshing sourceUUID...")
@@ -208,6 +212,8 @@ def check_if_hooked_and_update_title():
     """
     global sourceUUID, gameTitle, defaultRecordingTitle
 
+    # print("[check_if_hooked_and_update_title]")
+    
     try:
         if sourceUUID is None:
             raise TypeError
@@ -226,7 +232,11 @@ def check_if_hooked_and_update_title():
             print("Call data was empty, using default name for uncaptured windows...")
             return
         print("Hooked!")
-        gameTitle = gh_title(calldata)
+        try:
+            gameTitle = gh_title(calldata)
+        except TypeError:
+            print("Failed to get title, using default name - restart OBS or captured app.")
+            gameTitle = defaultRecordingTitle
         print(f"Current GameTitle: {gameTitle}")
     obs.calldata_destroy(calldata)
 
@@ -294,6 +304,8 @@ def refresh_source_uuid():
     global sett, sourceUUID
     s_name = obs.obs_data_get_string(sett, "source")
 
+    # print("[refresh_source_uuid]")
+
     if len(s_name) > 0:
         try:
             sourceUUID = get_recording_source_uuid(s_name)
@@ -305,17 +317,12 @@ def refresh_source_uuid():
     else:
         sourceUUID = None
 
-
+            
 def find_latest_file(folder_path, file_type):
-    time.sleep(0.01)
     files = glob.glob(folder_path + file_type)
     if files:
         max_file = max(files, key=os.path.getctime)
         return os.path.normpath(max_file)
-    else:
-        time.sleep(0.01)
-        return find_latest_file(folder_path, file_type)
-
 
 # OBS FUNCTIONS
 
@@ -375,14 +382,19 @@ def UUID_of_sel_src(props, prop, *args, **kwargs):
 
 
 def populate_list_property_with_source_names(list_property):
+    current_scene_as_source = obs.obs_frontend_get_current_scene()
+    scene = obs.obs_scene_from_source(current_scene_as_source)
+    
     obs.obs_property_list_clear(list_property)
-    sources = obs.obs_enum_sources()
+    sceneitems = obs.obs_scene_enum_items(scene)
     obs.obs_property_list_clear(list_property)
     obs.obs_property_list_add_string(list_property, "", "")
-    for source in sources:
+    for item in sceneitems:
+        source = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(source)
         obs.obs_property_list_add_string(list_property, name, name)
-    obs.source_list_release(sources)
+    obs.source_list_release(sceneitems)
+    obs.obs_source_release(current_scene_as_source)
 
 
 def refresh_list_and_get_uuid(props, prop, *args, **kwargs):
@@ -467,6 +479,7 @@ def script_unload():
     screenshotExtension = None
     screenshotExtensionMask = None
     outputDir = None
+    file_changed_sh_ref = None
 
     # Clear cached settings and important global values
     sourceUUID = None
