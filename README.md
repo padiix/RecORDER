@@ -50,5 +50,7 @@ First things first!
    >         - Application Audio Output Capture (Windows)
    > - "Recordings folder"
    >     - Select a directory where all of your recordings go by default, it will let the script organize the place for you ;)
-   > - "File extension"
+   > - "Recording extension"
    >     - Write here whatever extension you use for your recordings, the "mkv" is put here by default to both show how you should write the extension and also because I believe it's one of the best ones to use at the moment  
+   > - "Screenshot extension"
+   >     - Write here whatever extension you have your screenshots saved by OBS as, the "png" is put here by default to both show how you should write the extension and also because it's a default one for non-HDR screenshots 
