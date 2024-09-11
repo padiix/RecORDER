@@ -55,7 +55,6 @@ def file_changed_sh():
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     print("------------------------------")
-    # print("[file_changed_cb]")
     print("Refreshing sourceUUID...")
     refresh_source_uuid()
 
@@ -87,7 +86,6 @@ def start_recording_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
         print("------------------------------")
-        # print("[start_recording_handler]")
         print("Recording has started...\n")
         print("Reloading the signals!\n")
 
@@ -114,7 +112,6 @@ def start_buffer_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING:
         print("------------------------------")
-        # print("[start_buffer_handler]")
         print("Replay buffer has started...\n")
         print("Reloading the signals!\n")
         print("Signals reloaded!\n")
@@ -469,7 +466,7 @@ def script_properties():
 
 def script_unload():
     # Fetching global variables
-    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask, file_changed_sh_ref
     global sourceUUID, sett
     global currentRecording, gameTitle, isRecording, defaultRecordingTitle
     # Clear Settings class
@@ -581,15 +578,12 @@ class Recording:
         if not os.path.exists(self.get_newFolder()):
             os.makedirs(self.get_newFolder())
 
-    def remember_and_move(self) -> None:
+    def remember_and_move(self, ttw=0.01) -> None:
         """Moves the recording to new location using os.renames"""
         
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        time.sleep(0.01)
-
-        os.renames(oldPath, newPath)
         time.sleep(ttw)
         try:
             os.renames(oldPath, newPath)
@@ -609,13 +603,15 @@ class Screenshot:
         """
         global screenshotExtensionMask, outputDir
 
+        self.screenshotsPath = outputDir
+        self.screenshotsExtension = screenshotExtensionMask
         self.screenshotsFolderName = "Screenshots"
 
         # Allow to specify a custom path where the file is located.
         if customPath is not None:
             self.path = customPath
         else:
-            self.path = find_latest_file(outputDir, screenshotExtensionMask)
+            self.path = find_latest_file(outputDir, screenshotExtensionMask, 0.01)
 
         # Prepare paths needed for functions
         self.dir = os.path.dirname(self.path)
