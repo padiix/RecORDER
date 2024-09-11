@@ -611,7 +611,7 @@ class Screenshot:
         if customPath is not None:
             self.path = customPath
         else:
-            self.path = find_latest_file(outputDir, screenshotExtensionMask, 0.01)
+            self.path = find_latest_file(outputDir, screenshotExtensionMask)
 
         # Prepare paths needed for functions
         self.dir = os.path.dirname(self.path)
@@ -670,11 +670,15 @@ class Screenshot:
         if not os.path.exists(self.get_newFolder()):
             os.makedirs(self.get_newFolder())
 
-    def remember_and_move(self) -> None:
+    def remember_and_move(self, ttw=0.01) -> None:
         """Moves the recording to new location using os.renames"""
+        
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        time.sleep(0.01)
-
-        os.renames(oldPath, newPath)
+        time.sleep(ttw)
+        try:
+            os.renames(oldPath, newPath)
+        except PermissionError:
+            time.sleep(ttw)
+            os.renames(oldPath, newPath)
