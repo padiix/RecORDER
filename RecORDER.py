@@ -49,10 +49,7 @@ def file_changed_cb(calldata):
     print("Moving saved recording...")
 
     global globalVariables
-
-    result = find_latest_file(globalVariables.get_outputDir(), globalVariables.get_recordingExtensionMask())
-    print(result)
-    globalVariables.set_currentRecording(result)
+    globalVariables.set_currentRecording(find_latest_file(globalVariables.get_outputDir(), globalVariables.get_recordingExtensionMask()))
 
     rec = Recording(customPath=globalVariables.get_currentRecording())
     rec.create_new_folder()
@@ -70,7 +67,7 @@ def file_changed_cb(calldata):
 def start_recording_handler(event):
     """Event function reacting to OBS Event of starting the recording."""
 
-    if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTING:
+    if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTED:
         print("------------------------------")
         print("Recording has started...\n")
         print("Reloading the signals!\n")
@@ -95,7 +92,7 @@ def start_recording_handler(event):
 def start_buffer_handler(event):
     """Event function reacting to OBS Event of starting the replay buffer."""
 
-    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING:
+    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
         print("------------------------------")
         print("Replay buffer has started...\n")
         print("Reloading the signals!\n")
