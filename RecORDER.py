@@ -321,54 +321,6 @@ def find_latest_file(folder_path, file_type):
         max_file = max(files, key=os.path.getctime)
         return os.path.normpath(max_file)
 
-# OBS FUNCTIONS
-
-def script_load(settings):
-    # Loading in settings
-    global sett
-    sett = settings
-
-    # Loading in Signals
-    file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
-
-    # Loading in Frontend events
-    obs.obs_frontend_add_event_callback(start_buffer_handler)
-    obs.obs_frontend_add_event_callback(replay_buffer_handler)
-    obs.obs_frontend_add_event_callback(start_recording_handler)
-    obs.obs_frontend_add_event_callback(recording_stop_handler)
-    obs.obs_frontend_add_event_callback(screenshot_handler_event)
-
-
-def script_defaults(settings):
-    obs.obs_data_set_default_string(settings, "extension", "mkv")
-    obs.obs_data_set_default_string(settings, "ss_extension", "png")
-
-
-def script_update(settings):
-    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask
-
-    # Fetching the Settings
-    addTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
-    outputDir = os.path.normpath(obs.obs_data_get_string(settings, "outputdir"))
-
-    recordingExtension = obs.obs_data_get_string(settings, "extension")
-    recordingExtensionMask = "\*" + recordingExtension
-    
-    screenshotExtension = obs.obs_data_get_string(settings, "ss_extension")
-    screenshotExtensionMask = "\*" + screenshotExtension
-
-    print("Updated the settings!")
-
-
-def script_description():
-    desc = (
-        "<h3>OBS RecORDER </h3>"
-        "<hr>"
-        "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
-        "<small>Created by:</small> <b>padii</b><br><br>"
-        "<h4>Settings:</h4>"
-    )
-    return desc
 
 
 def UUID_of_sel_src(props, prop, *args, **kwargs):
@@ -406,87 +358,6 @@ def refresh_list_and_get_uuid(props, prop, *args, **kwargs):
 
 def refresh_pressed(props, prop):
     print("Refreshed sources list!")
-
-
-def script_properties():
-    props = obs.obs_properties_create()
-
-    # Title checkmark
-    bool_p = obs.obs_properties_add_bool(
-        props, "title_before_bool", "Add name of the game as a recording prefix"
-    )
-    obs.obs_property_set_long_description(
-        bool_p,
-        "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
-    )
-
-    # Source list
-    sources_for_recording = obs.obs_properties_add_list(
-        props,
-        "source",
-        "Capturing source name",
-        obs.OBS_COMBO_TYPE_LIST,
-        obs.OBS_COMBO_FORMAT_STRING,
-    )
-
-    populate_list_property_with_source_names(sources_for_recording)
-    obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
-
-    # Refresh button!
-    b = obs.obs_properties_add_button(
-        props, "button", "Refresh source list", refresh_pressed
-    )
-    obs.obs_property_set_modified_callback(b, refresh_list_and_get_uuid)
-
-    # UUID of the selected source (debugging only)
-    uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
-    obs.obs_property_set_modified_callback(uuid_text, UUID_of_sel_src)
-
-    # Output directory
-    obs.obs_properties_add_path(
-        props,
-        "outputdir",
-        "Recordings folder",
-        obs.OBS_PATH_DIRECTORY,
-        None,
-        str(Path.home()),
-    )
-
-    # Extension of file
-    obs.obs_properties_add_text(
-        props, "extension", "Recording extension", obs.OBS_TEXT_DEFAULT
-    )
-    
-    obs.obs_properties_add_text(
-        props, "ss_extension", "Screenshot extension", obs.OBS_TEXT_DEFAULT
-    )
-
-    return props
-
-
-def script_unload():
-    # Fetching global variables
-    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask, file_changed_sh_ref
-    global sourceUUID, sett
-    global currentRecording, gameTitle, isRecording, defaultRecordingTitle
-    # Clear Settings class
-    addTitleBool = None
-    recordingExtension = None
-    recordingExtensionMask = None
-    screenshotExtension = None
-    screenshotExtensionMask = None
-    outputDir = None
-    file_changed_sh_ref = None
-
-    # Clear cached settings and important global values
-    sourceUUID = None
-    sett = None
-
-    # Clear recording related values
-    currentRecording = None
-    gameTitle = None
-    isRecording = False
-    defaultRecordingTitle = None
 
 
 class Recording:
@@ -682,3 +553,132 @@ class Screenshot:
         except PermissionError:
             time.sleep(ttw)
             os.renames(oldPath, newPath)
+
+
+# OBS FUNCTIONS
+
+def script_load(settings):
+    # Loading in settings
+    global sett
+    sett = settings
+
+    # Loading in Signals
+    file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
+
+    # Loading in Frontend events
+    obs.obs_frontend_add_event_callback(start_buffer_handler)
+    obs.obs_frontend_add_event_callback(replay_buffer_handler)
+    obs.obs_frontend_add_event_callback(start_recording_handler)
+    obs.obs_frontend_add_event_callback(recording_stop_handler)
+    obs.obs_frontend_add_event_callback(screenshot_handler_event)
+
+
+def script_defaults(settings):
+    obs.obs_data_set_default_string(settings, "extension", "mkv")
+    obs.obs_data_set_default_string(settings, "ss_extension", "png")
+
+
+def script_update(settings):
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask
+
+    # Fetching the Settings
+    addTitleBool = obs.obs_data_get_bool(settings, "title_before_bool")
+    outputDir = os.path.normpath(obs.obs_data_get_string(settings, "outputdir"))
+    recordingExtension = obs.obs_data_get_string(settings, "extension")
+    screenshotExtension = obs.obs_data_get_string(settings, "ss_extension")
+    
+    recordingExtensionMask = "\*" + recordingExtension
+    screenshotExtensionMask = "\*" + screenshotExtension
+
+    print("Updated the settings!")
+
+
+def script_description():
+    desc = (
+        "<h3>OBS RecORDER </h3>"
+        "<hr>"
+        "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
+        "<small>Created by:</small> <b>padii</b><br><br>"
+        "<h4>Settings:</h4>"
+    )
+    return desc
+
+def script_properties():
+    props = obs.obs_properties_create()
+
+    # Title checkmark
+    bool_p = obs.obs_properties_add_bool(
+        props, "title_before_bool", "Add name of the game as a recording prefix"
+    )
+    obs.obs_property_set_long_description(
+        bool_p,
+        "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
+    )
+
+    # Source list
+    sources_for_recording = obs.obs_properties_add_list(
+        props,
+        "source",
+        "Capturing source name",
+        obs.OBS_COMBO_TYPE_LIST,
+        obs.OBS_COMBO_FORMAT_STRING,
+    )
+
+    populate_list_property_with_source_names(sources_for_recording)
+    obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
+
+    # Refresh button!
+    b = obs.obs_properties_add_button(
+        props, "button", "Refresh source list", refresh_pressed
+    )
+    obs.obs_property_set_modified_callback(b, refresh_list_and_get_uuid)
+
+    # UUID of the selected source (debugging only)
+    uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
+    obs.obs_property_set_modified_callback(uuid_text, UUID_of_sel_src)
+
+    # Output directory
+    obs.obs_properties_add_path(
+        props,
+        "outputdir",
+        "Recordings folder",
+        obs.OBS_PATH_DIRECTORY,
+        None,
+        str(Path.home()),
+    )
+
+    # Extension of file
+    obs.obs_properties_add_text(
+        props, "extension", "Recording extension", obs.OBS_TEXT_DEFAULT
+    )
+    
+    obs.obs_properties_add_text(
+        props, "ss_extension", "Screenshot extension", obs.OBS_TEXT_DEFAULT
+    )
+
+    return props
+
+
+def script_unload():
+    # Fetching global variables
+    global addTitleBool, recordingExtension, recordingExtensionMask, outputDir, screenshotExtension, screenshotExtensionMask, file_changed_sh_ref
+    global sourceUUID, sett
+    global currentRecording, gameTitle, isRecording, defaultRecordingTitle
+    # Clear Settings class
+    addTitleBool = None
+    recordingExtension = None
+    recordingExtensionMask = None
+    screenshotExtension = None
+    screenshotExtensionMask = None
+    outputDir = None
+    file_changed_sh_ref = None
+
+    # Clear cached settings and important global values
+    sourceUUID = None
+    sett = None
+
+    # Clear recording related values
+    currentRecording = None
+    gameTitle = None
+    isRecording = False
+    defaultRecordingTitle = None
