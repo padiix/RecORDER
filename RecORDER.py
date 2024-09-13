@@ -89,28 +89,6 @@ def start_recording_handler(event):
         print(f"Current game title: {globalVariables.get_gameTitle()}")
         print("------------------------------")
 
-def start_buffer_handler(event):
-    """Event function reacting to OBS Event of starting the replay buffer."""
-
-    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
-        print("------------------------------")
-        print("Replay buffer has started...\n")
-        print("Reloading the signals!\n")
-        print("Signals reloaded!\n")
-        print("Reseting the recording related values...\n")
-
-        global globalVariables
-
-        globalVariables.set_isRecording(True)
-        globalVariables.set_currentRecording(None)
-        globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
-
-        print("------------------------------")
-        print(f"Recording started: {'Yes' if globalVariables.get_isRecording() else 'No'}")
-        print(f"CurrentRecording is {globalVariables.get_currentRecording()}")
-        print(f"Game title set to {globalVariables.get_gameTitle()}")
-        print("------------------------------")
-
 def recording_stop_handler(event):
     """Event function reacting to OBS Event of recording fully stopping."""
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
@@ -137,9 +115,34 @@ def recording_stop_handler(event):
         globalVariables.set_isRecording(False)
         print("------------------------------")
 
+def start_buffer_handler(event):
+    """Event function reacting to OBS Event of starting the replay buffer."""
+
+    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
+        print("------------------------------")
+        print("Replay buffer has started...\n")
+        print("Reloading the signals!\n")
+        print("Signals reloaded!\n")
+        print("Reseting the recording related values...\n")
+
+        global globalVariables
+
+        globalVariables.set_isReplayActive(True)
+        globalVariables.set_currentRecording(None)
+        globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
+
+        print("------------------------------")
+        print(f"Replay active? {'Yes' if globalVariables.get_isReplayActive() else 'No'}")
+        print(f"CurrentRecording is {globalVariables.get_currentRecording()}")
+        print(f"Game title set to {globalVariables.get_gameTitle()}")
+        print("------------------------------")
+
 def replay_buffer_handler(event):
     """Event function reacting to OBS Event of saving the replay buffer."""
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
+        
+        global globalVariables
+        
         print("------------------------------")
         print("Saving the Replay Buffer...")
 
@@ -149,7 +152,7 @@ def replay_buffer_handler(event):
         print("Running get_hooked procedure to get current app title...")
         check_if_hooked_and_update_title()
 
-        rec = Recording(isReplay=True)
+        rec = Recording(isReplay=globalVariables.get_isReplayActive())
         rec.create_new_folder()
         rec.remember_and_move()
 
@@ -346,6 +349,7 @@ class GlobalVariables:
         #[Related to RECORDING]
         self.defaultRecordingName = "Manual Recording"
         self.isRecording = False
+        self.isReplayActive = False
         self.currentRecording = None
         self.gameTitle = None
         self.outputDir = None
@@ -388,6 +392,12 @@ class GlobalVariables:
     def set_isRecording(self, value):
         self.isRecording = value
     
+    def get_isReplayActive(self):
+        return self.isReplayActive
+        
+    def set_isReplayActive(self, value: bool):
+        self.isReplayActive = value
+    
     def get_currentRecording(self):
         return self.currentRecording
     
@@ -415,6 +425,7 @@ class GlobalVariables:
         self.screenshotExtension = None
         self.defaultRecordingName = None
         self.isRecording = None
+        self.isReplayActive = None
         self.currentRecording = None
         self.gameTitle = None
         self.outputDir = None
@@ -626,10 +637,10 @@ def script_load(settings):
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
     # Loading in Frontend events
-    obs.obs_frontend_add_event_callback(start_buffer_handler)
-    obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(start_recording_handler)
     obs.obs_frontend_add_event_callback(recording_stop_handler)
+    obs.obs_frontend_add_event_callback(start_buffer_handler)
+    obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(screenshot_handler_event)
     obs.obs_frontend_add_event_callback(scenecollection_changing_event)
 
