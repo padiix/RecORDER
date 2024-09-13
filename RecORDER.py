@@ -234,7 +234,7 @@ def check_if_hooked_and_update_title():
         print(f"Current game title: {globalVariables.get_gameTitle()}")
     obs.calldata_destroy(calldata)
 
-def get_hooked(uuid):
+def get_hooked(uuid: str):
     source = obs.obs_get_source_by_uuid(uuid)
     cd = obs.calldata_create()
     ph = obs.obs_source_get_proc_handler(source)
@@ -251,7 +251,7 @@ def gh_title(calldata) -> str:
 
 # HELPER FUNCTIONS
 
-def remove_unusable_title_characters(title):
+def remove_unusable_title_characters(title: str):
     # Remove non-alphanumeric characters (ex. ':')
     title = re.sub(r"[^A-Za-z0-9 ]+", "", title)
 
@@ -302,7 +302,7 @@ def refresh_source_uuid():
     else:
         globalVariables.set_sourceUUID(None)
 
-def find_latest_file(folder_path, file_type):
+def find_latest_file(folder_path: str, file_type: str):
     files = glob.glob(folder_path + file_type)
     if files:
         max_file = max(files, key=os.path.getctime)
@@ -364,7 +364,7 @@ class GlobalVariables:
         self.outputDir = None
         self.sourceUUID = None
         
-    def load_func(self, titleBool, rcrdExt, scrnstExt, outDir):
+    def load_func(self, titleBool: bool, rcrdExt: str, scrnstExt: str, outDir: str):
         self.addTitleBool = titleBool
         self.recordingExtension = rcrdExt
         self.screenshotExtension = scrnstExt
@@ -398,7 +398,7 @@ class GlobalVariables:
     def get_isRecording(self):
         return self.isRecording
     
-    def set_isRecording(self, value):
+    def set_isRecording(self, value: bool):
         self.isRecording = value
     
     def get_isReplayActive(self):
@@ -410,13 +410,13 @@ class GlobalVariables:
     def get_currentRecording(self):
         return self.currentRecording
     
-    def set_currentRecording(self, value):
+    def set_currentRecording(self, value: str):
         self.currentRecording = value
         
     def get_gameTitle(self):
         return self.gameTitle
     
-    def set_gameTitle(self, value):
+    def set_gameTitle(self, value: str):
         self.gameTitle = value
         
     def get_outputDir(self):
@@ -425,7 +425,7 @@ class GlobalVariables:
     def get_sourceUUID(self):
         return self.sourceUUID
     
-    def set_sourceUUID(self, value):
+    def set_sourceUUID(self, value: str):
         self.sourceUUID = value
     
     def unload_func(self):
@@ -442,7 +442,7 @@ class GlobalVariables:
 class Recording:
     """Class that allows better control over files for the needs of this script"""
 
-    def __init__(self, customPath=None, isReplay=False) -> None:
+    def __init__(self, customPath: str = None, isReplay: bool = False) -> None:
         """Create a file based on either specified path or path that was configured in Scripts settings
 
         Args:
@@ -546,7 +546,7 @@ class Recording:
 class Screenshot:
     """Class that allows better control over screenshots for the needs of this script"""
 
-    def __init__(self, customPath=None) -> None:
+    def __init__(self, customPath: str = None) -> None:
         """Create a file based on either specified path or path that was configured in Scripts settings
 
         Args:
