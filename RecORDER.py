@@ -307,7 +307,8 @@ def populate_list_property_with_source_names(list_property):
         source = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(source)
         obs.obs_property_list_add_string(list_property, name, name)
-    obs.source_list_release(sceneitems)
+    
+    obs.sceneitem_list_release(sceneitems)
     obs.obs_source_release(current_scene_as_source)
 
 def refresh_source_list(props, prop, *args, **kwargs):
