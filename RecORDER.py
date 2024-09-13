@@ -20,7 +20,6 @@ globalVariables = None
 
 # Values supporting smooth working and less calls
 
-sourceUUID = None
 sett = None
 file_changed_sh_ref = None
 
@@ -38,6 +37,7 @@ def file_changed_sh():
 
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
+    
     print("------------------------------")
     print("Refreshing sourceUUID...")
     refresh_source_uuid()
@@ -187,10 +187,10 @@ def check_if_hooked_and_update_title():
     Raises:
         TypeError: Only triggers when sourceUUID is None and causes the title to reset to defaultRecordingName
     """
-    global sourceUUID, globalVariables
+    global globalVariables
     
     try:
-        if sourceUUID is None:
+        if globalVariables.get_sourceUUID() is None:
             raise TypeError
 
     except TypeError:
@@ -198,7 +198,7 @@ def check_if_hooked_and_update_title():
         globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
         return
 
-    calldata = get_hooked(sourceUUID)
+    calldata = get_hooked(globalVariables.get_sourceUUID())
     print("Checking if source is hooked to any window...")
     if calldata is not None:
         if not gh_isHooked(calldata):
@@ -251,8 +251,6 @@ def get_recording_source_uuid(configured_source):
         UUID: Source UUID or None
     """
 
-    global sourceUUID
-
     current_scene_as_source = obs.obs_frontend_get_current_scene()
 
     if current_scene_as_source:
@@ -271,19 +269,19 @@ def get_recording_source_uuid(configured_source):
     return source_uuid
 
 def refresh_source_uuid():
-    global sett, sourceUUID
+    global sett, globalVariables
     s_name = obs.obs_data_get_string(sett, "source")
 
     if len(s_name) > 0:
         try:
-            sourceUUID = get_recording_source_uuid(s_name)
-            if sourceUUID is None:
+            globalVariables.set_sourceUUID(get_recording_source_uuid(s_name))
+            if globalVariables.get_sourceUUID() is None:
                 raise TypeError
         except TypeError:
             print("Source not selected, please refresh and re-select")
-            sourceUUID = None
+            globalVariables.set_sourceUUID(None)
     else:
-        sourceUUID = None
+        globalVariables.set_sourceUUID(None)
 
 def find_latest_file(folder_path, file_type):
     files = glob.glob(folder_path + file_type)
@@ -291,11 +289,11 @@ def find_latest_file(folder_path, file_type):
         max_file = max(files, key=os.path.getctime)
         return os.path.normpath(max_file)
 
-def UUID_of_sel_src(props, prop, *args, **kwargs):
-    p = obs.obs_properties_get(props, "src_uuid")
-    refresh_source_uuid()
-    obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
-    return True
+# def UUID_of_sel_src(props, prop, *args, **kwargs):
+#     p = obs.obs_properties_get(props, "src_uuid")
+#     refresh_source_uuid()
+#     obs.obs_property_set_description(p, f"UUID: {globalVariables.get_sourceUUID()}")
+#     return True
 
 def populate_list_property_with_source_names(list_property):
     current_scene_as_source = obs.obs_frontend_get_current_scene()
@@ -315,9 +313,9 @@ def populate_list_property_with_source_names(list_property):
 def refresh_source_list(props, prop, *args, **kwargs):
     lst = obs.obs_properties_get(props, "source")
     populate_list_property_with_source_names(lst)
-
+    refresh_source_uuid()
+    
     # p = obs.obs_properties_get(props, "src_uuid")
-    # refresh_source_uuid()
     # obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
     return True
 
@@ -343,6 +341,7 @@ class GlobalVariables:
         self.currentRecording = None
         self.gameTitle = None
         self.outputDir = None
+        self.sourceUUID = None
         
     def load_func(self, titleBool, rcrdExt, scrnstExt, outDir):
         self.addTitleBool = titleBool
@@ -396,7 +395,11 @@ class GlobalVariables:
     def get_outputDir(self):
         return self.outputDir
     
-    # ---
+    def get_sourceUUID(self):
+        return self.sourceUUID
+    
+    def set_sourceUUID(self, value):
+        self.sourceUUID = value
     
     def unload_func(self):
         self.addTitleBool = None
@@ -673,7 +676,7 @@ def script_properties():
     )
 
     populate_list_property_with_source_names(sources_for_recording)
-    obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
+    # obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
 
     # Refresh button!
     b = obs.obs_properties_add_button(
@@ -709,7 +712,7 @@ def script_properties():
 def script_unload():
     # Fetching global variables
     global globalVariables, file_changed_sh_ref
-    global sourceUUID, sett
+    global sett
     
     # Clear global variables
     globalVariables.unload_func()
@@ -718,5 +721,4 @@ def script_unload():
     file_changed_sh_ref = None
 
     # Clear cached settings and important global values
-    sourceUUID = None
     sett = None
