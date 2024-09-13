@@ -312,13 +312,13 @@ def populate_list_property_with_source_names(list_property):
     obs.source_list_release(sceneitems)
     obs.obs_source_release(current_scene_as_source)
 
-def refresh_list_and_get_uuid(props, prop, *args, **kwargs):
+def refresh_source_list(props, prop, *args, **kwargs):
     lst = obs.obs_properties_get(props, "source")
     populate_list_property_with_source_names(lst)
 
-    p = obs.obs_properties_get(props, "src_uuid")
-    refresh_source_uuid()
-    obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
+    # p = obs.obs_properties_get(props, "src_uuid")
+    # refresh_source_uuid()
+    # obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
     return True
 
 def refresh_pressed(props, prop):
@@ -679,11 +679,11 @@ def script_properties():
     b = obs.obs_properties_add_button(
         props, "button", "Refresh source list", refresh_pressed
     )
-    obs.obs_property_set_modified_callback(b, refresh_list_and_get_uuid)
+    obs.obs_property_set_modified_callback(b, refresh_source_list)
 
     # UUID of the selected source (debugging only)
-    uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
-    obs.obs_property_set_modified_callback(uuid_text, UUID_of_sel_src)
+    # uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
+    # obs.obs_property_set_modified_callback(uuid_text, UUID_of_sel_src)
 
     # Output directory
     obs.obs_properties_add_path(
