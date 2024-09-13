@@ -11,7 +11,7 @@ from pathlib import Path
 
 # TODO: Implement a way for storing the UUID and Signals that react to it's deletion, etc. (Not figured out by me yet)
 # TODO: Config instead of the Classes storing the data (Need to think if it's necessary, but probably not)
-
+# TODO: I should think about possibility of automatically selecting the source using the source-specific signal -> hooked [https://docs.obsproject.com/reference-sources#source-specific-signals]
 
 # Global variables
 
