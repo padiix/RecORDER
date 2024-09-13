@@ -160,6 +160,15 @@ def replay_buffer_handler(event):
         print(f"New path: {rec.get_newPath()}")
         print("------------------------------")
            
+def replay_buffer_stop_handler(event):
+    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED:
+        global globalVariables
+        globalVariables.set_isReplayActive(False)
+        
+        print("------------------------------")
+        print(f"Replay active? {'Yes' if globalVariables.get_isReplayActive() else 'No'}")
+        print("------------------------------")
+        
 def screenshot_handler_event(event):
     """Event function reacting to OBS Event of taking the screenshot."""
     
@@ -641,6 +650,7 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(recording_stop_handler)
     obs.obs_frontend_add_event_callback(start_buffer_handler)
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
+    obs.obs_frontend_add_event_callback(replay_buffer_stop_handler)
     obs.obs_frontend_add_event_callback(screenshot_handler_event)
     obs.obs_frontend_add_event_callback(scenecollection_changing_event)
 
