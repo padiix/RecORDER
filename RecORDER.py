@@ -610,10 +610,6 @@ class Screenshot:
 # OBS FUNCTIONS
 
 def script_load(settings):
-    # Loading in settings
-    global sett
-    sett = settings
-
     # Loading object of class holding global variables
     global globalVariables
     globalVariables = GlobalVariables()
@@ -634,6 +630,10 @@ def script_defaults(settings):
 
 def script_update(settings):
     global globalVariables
+    
+    # Loading in settings
+    global sett
+    sett = settings
     
     # Fetching the Settings
     titleBool = obs.obs_data_get_bool(settings, "title_before_bool")
