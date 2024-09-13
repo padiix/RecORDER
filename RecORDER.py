@@ -335,6 +335,7 @@ class GlobalVariables:
         self.addTitleBool = None
         self.recordingExtension = None
         self.screenshotExtension = None
+        self.ttw = 0.007
         
         #[Related to RECORDING]
         self.defaultRecordingName = "Manual Recording"
@@ -365,6 +366,9 @@ class GlobalVariables:
     
     def get_screenshotExtensionMask(self):
         return "\*" + self.screenshotExtension
+    
+    def get_ttw(self):
+        return self.ttw
     
     # ---
     
@@ -415,8 +419,13 @@ class Recording:
             isReplay (bool): Set to true if handled recording is from replay buffer
         """
 
-        self.replaysFolderName = "Replays"
+        global globalVariables
 
+        self.replaysFolderName = "Replays"
+        self.ttw = globalVariables.get_ttw()
+        self.gameTitle = globalVariables.get_gameTitle()
+        self.addTitleBool = globalVariables.get_addTitleBool()
+        
         # If this object is created during Replay Buffer handling, it will do additional stuff needed
         if isReplay:
             self.isReplay = isReplay
@@ -450,11 +459,10 @@ class Recording:
         Returns:
             str: name of the new folder where the recording will be located
         """
-        global globalVariables
         if self.isReplay:
-            return os.path.join(self.dir, globalVariables.get_gameTitle(), self.replaysFolderName)
+            return os.path.join(self.dir, self.gameTitle, self.replaysFolderName)
         else:
-            return os.path.join(self.dir, globalVariables.get_gameTitle())
+            return os.path.join(self.dir, self.gameTitle)
 
 
     def get_newFilename(self) -> str:
@@ -464,9 +472,8 @@ class Recording:
         Returns:
             str: name of the recording
         """
-        global globalVariables
-        if globalVariables.get_addTitleBool():
-            return globalVariables.get_gameTitle() + " - " + self.get_filename()
+        if self.addTitleBool:
+            return self.gameTitle + " - " + self.get_filename()
         else:
             return self.get_filename()
 
@@ -491,17 +498,18 @@ class Recording:
         if not os.path.exists(self.get_newFolder()):
             os.makedirs(self.get_newFolder())
 
-    def remember_and_move(self, ttw=0.01) -> None:
+    def remember_and_move(self) -> None:
         """Moves the recording to new location using os.renames"""
         
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        time.sleep(ttw)
+        time.sleep(self.ttw)
         try:
             os.renames(oldPath, newPath)
         except PermissionError:
-            time.sleep(ttw/2)
+            print("Re-trying moving of the recording...")
+            time.sleep(self.ttw/2)
             os.renames(oldPath, newPath)
         
 class Screenshot:
@@ -514,10 +522,13 @@ class Screenshot:
             customPath (str): Path to a file that needs to be moved
             isReplay (bool): Set to true if handled recording is from replay buffer
         """
-
+        global globalVariables
 
         self.screenshotsFolderName = "Screenshots"
-
+        self.ttw = globalVariables.get_ttw()
+        self.gameTitle = globalVariables.get_gameTitle()
+        self.addTitleBool = globalVariables.get_addTitleBool()
+        
         # Allow to specify a custom path where the file is located.
         if customPath is not None:
             self.path = customPath
@@ -543,8 +554,7 @@ class Screenshot:
         Returns:
             str: name of the new folder where the recording will be located
         """
-        global globalVariables
-        return os.path.join(self.dir, globalVariables.get_gameTitle(), self.screenshotsFolderName)
+        return os.path.join(self.dir, self.gameTitle, self.screenshotsFolderName)
 
     def get_newFilename(self) -> str:
         """Returns the name of a file based on the choice of the user
@@ -553,9 +563,8 @@ class Screenshot:
         Returns:
             str: name of the recording
         """
-        global globalVariables
-        if globalVariables.get_addTitleBool():
-            return globalVariables.get_gameTitle() + " - " + self.get_filename()
+        if self.addTitleBool:
+            return self.gameTitle + " - " + self.get_filename()
         else:
             return self.get_filename()
 
@@ -580,17 +589,18 @@ class Screenshot:
         if not os.path.exists(self.get_newFolder()):
             os.makedirs(self.get_newFolder())
 
-    def remember_and_move(self, ttw=0.01) -> None:
+    def remember_and_move(self) -> None:
         """Moves the recording to new location using os.renames"""
         
         oldPath = self.get_oldPath()
         newPath = self.get_newPath()
 
-        time.sleep(ttw)
+        time.sleep(self.ttw)
         try:
             os.renames(oldPath, newPath)
         except PermissionError:
-            time.sleep(ttw/2)
+            print("Re-trying moving of the screenshot...")
+            time.sleep(self.ttw/2)
             os.renames(oldPath, newPath)
 
 
