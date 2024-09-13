@@ -178,6 +178,13 @@ def screenshot_handler_event(event):
         print(f"New path: {scrnst.get_newPath()}")
         print("------------------------------")
 
+def scenecollection_changing_event(event):
+    global globalVariables, file_changed_sh_ref
+    if event == obs.OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING:
+        print("Scene Collection changing detected, freeing globals to avoid issues...")
+        globalVariables.unload_func()
+        file_changed_sh_ref = None
+        
 
 # PROCEDURES
 
@@ -624,6 +631,7 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(start_recording_handler)
     obs.obs_frontend_add_event_callback(recording_stop_handler)
     obs.obs_frontend_add_event_callback(screenshot_handler_event)
+    obs.obs_frontend_add_event_callback(scenecollection_changing_event)
 
 def script_defaults(settings):
     obs.obs_data_set_default_string(settings, "extension", "mkv")
