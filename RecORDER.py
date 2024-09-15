@@ -469,9 +469,9 @@ class Recording:
             str: name of the new folder where the recording will be located
         """
         if self.isReplay:
-            return os.path.join(self.dir, self.gameTitle, self.replaysFolderName)
+            return os.path.normpath(os.path.join(self.dir, self.gameTitle, self.replaysFolderName))
         else:
-            return os.path.join(self.dir, self.gameTitle)
+            return os.path.normpath(os.path.join(self.dir, self.gameTitle))
 
 
     def get_newFilename(self) -> str:
@@ -492,7 +492,7 @@ class Recording:
         Returns:
             str: previous path of file
         """
-        return os.path.join(self.dir, self.get_filename())
+        return os.path.normpath(os.path.join(self.dir, self.get_filename()))
 
     def get_newPath(self) -> str:
         """Returns current path where file is located
@@ -500,7 +500,7 @@ class Recording:
         Returns:
             str: current path of file
         """
-        return os.path.join(self.get_newFolder(), self.get_newFilename())
+        return os.path.normpath(os.path.join(self.get_newFolder(), self.get_newFilename()))
 
     def create_new_folder(self) -> None:
         """Creates a new folder based on title of the captured fullscreen application"""
