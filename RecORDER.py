@@ -644,9 +644,6 @@ def script_update(settings):
     global sett
     sett = settings
     
-    # Reloading the signal for hooking
-    hooked_sh()        # Respond to selected source hooking to a window
-    
     # Fetching the Settings
     titleBool = obs.obs_data_get_bool(settings, "title_before_bool")
     rcrdExt=obs.obs_data_get_string(settings, "extension")
