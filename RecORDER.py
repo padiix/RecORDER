@@ -47,6 +47,10 @@ def file_changed_cb(calldata):
     global globalVariables
     globalVariables.set_currentRecording(find_latest_file(globalVariables.get_outputDir(), globalVariables.get_recordingExtensionMask()))
 
+    if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
+            print("Running get_hooked procedure to get current app title...")
+            check_if_hooked_and_update_title()
+
     print("Moving saved recording...")
     rec = Recording(customPath=globalVariables.get_currentRecording())
     rec.create_new_folder()
