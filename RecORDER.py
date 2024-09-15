@@ -59,8 +59,8 @@ def file_changed_cb(calldata):
     print("------------------------------")
     
 def hooked_sh():
-    source_obj = None
     global sourceNames, globalVariables
+    sceneitem_source = None
     
     print("Checking available sources for a match with source table...")
     
@@ -69,27 +69,24 @@ def hooked_sh():
 
     sceneitems = obs.obs_scene_enum_items(scene)
     for item in sceneitems:
-        source_obj = obs.obs_sceneitem_get_source(item)
-        name = obs.obs_source_get_name(source_obj)
-                globalVariables.set_sourceUUID(obs.obs_source_get_uuid(source_obj))
+        sceneitem_source = obs.obs_sceneitem_get_source(item)
+        name = obs.obs_source_get_name(sceneitem_source)
         for source in sourceNames:
+            print(f"name == source? {name == source}")
             if name == source :
+                globalVariables.set_sourceUUID(obs.obs_source_get_uuid(sceneitem_source))
                 print("Match found!")
                 break
-            else:
-                print("Not found... Looking further")
-                obs.obs_source_release(source_obj)
 
     obs.sceneitem_list_release(sceneitems)
     obs.obs_source_release(current_scene_as_source)
     
-    if not source_obj:
+    if not globalVariables.get_sourceUUID():
         print ("Nothing was found... Did you name your source in different way than in the 'source' array?")
     
-    obs.obs_source_release(source_obj)
     
     # print("Fetching the signal handler from the matching source...")
-    source_sh_ref = obs.obs_source_get_signal_handler(source_obj)
+    source_sh_ref = obs.obs_source_get_signal_handler(sceneitem_source)
     # print("Connecting the source signal handler to 'hooked' signal...")
     obs.signal_handler_connect(source_sh_ref, "hooked", hooked_cb)
     
