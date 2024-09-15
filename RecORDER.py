@@ -117,7 +117,7 @@ def start_recording_handler(event):
         file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
         print("Signals reloaded!\n")
-        print("Reseting the recording related values...\n")
+        print("Reseting the recording related values...")
 
         
 
@@ -636,6 +636,7 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(scenecollection_changing_event)
 
 def script_defaults(settings):
+    obs.obs_data_set_default_string(settings, "outputdir", os.path.normpath(Path.home()))
     obs.obs_data_set_default_string(settings, "extension", "mkv")
     obs.obs_data_set_default_string(settings, "ss_extension", "png")
 
@@ -664,6 +665,9 @@ def script_description():
         "<hr>"
         "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
         "<small>Created by:</small> <b>padii</b><br><br>"
+        ""
+        "<h4>Please, make sure that your screen/game capturing source is matching the 'source' array in the script!</h4>"
+        "You can view the script by pressing 'Edit script' button while RecORDER.py is selected"
         "<h4>Settings:</h4>"
     )
     return desc
@@ -687,7 +691,7 @@ def script_properties():
         "Recordings folder",
         obs.OBS_PATH_DIRECTORY,
         None,
-        str(Path.home()),
+        os.path.normpath(Path.home()),
     )
 
     # Extension of file
@@ -705,6 +709,15 @@ def script_unload():
     # Fetching global variables
     global globalVariables, file_changed_sh_ref
     global sett
+    
+    # Clear events
+    obs.obs_frontend_remove_event_callback(start_recording_handler)
+    obs.obs_frontend_remove_event_callback(recording_stop_handler)
+    obs.obs_frontend_remove_event_callback(start_buffer_handler)
+    obs.obs_frontend_remove_event_callback(replay_buffer_handler)
+    obs.obs_frontend_remove_event_callback(replay_buffer_stop_handler)
+    obs.obs_frontend_remove_event_callback(screenshot_handler_event)
+    obs.obs_frontend_remove_event_callback(scenecollection_changing_event)
     
     # Clear global variables
     globalVariables.unload_func()
