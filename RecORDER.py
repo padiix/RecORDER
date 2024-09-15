@@ -222,7 +222,7 @@ def screenshot_handler_event(event):
             print("Reloading the signals...")
             hooked_sh()    # Respond to selected source hooking to a window
             print("Signals reloaded.")
-            
+        
         if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
             print("Running get_hooked procedure to get current app title...")
             check_if_hooked_and_update_title()
@@ -335,7 +335,7 @@ class GlobalVariables:
         self.isRecording = False
         self.isReplayActive = False
         self.currentRecording = None
-        self.gameTitle = None
+        self.gameTitle = self.defaultRecordingName
         self.outputDir = None
         self.sourceUUID = None
         
@@ -563,7 +563,7 @@ class Screenshot:
         Returns:
             str: name of the new folder where the recording will be located
         """
-        return os.path.join(self.dir, self.gameTitle, self.screenshotsFolderName)
+        return os.path.normpath(os.path.join(self.dir, self.gameTitle, self.screenshotsFolderName))
 
     def get_newFilename(self) -> str:
         """Returns the name of a file based on the choice of the user
@@ -583,7 +583,7 @@ class Screenshot:
         Returns:
             str: previous path of file
         """
-        return os.path.join(self.dir, self.get_filename())
+        return os.path.normpath(os.path.join(self.dir, self.get_filename()))
 
     def get_newPath(self) -> str:
         """Returns current path where file is located
@@ -591,7 +591,7 @@ class Screenshot:
         Returns:
             str: current path of file
         """
-        return os.path.join(self.get_newFolder(), self.get_newFilename())
+        return os.path.normpath(os.path.join(self.get_newFolder(), self.get_newFilename()))
 
     def create_new_folder(self) -> None:
         """Creates a new folder based on title of the captured fullscreen application"""
