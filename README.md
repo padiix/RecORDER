@@ -40,12 +40,8 @@ First things first!
    > - "Add name of the game as a recording prefix" checkbox - if you want your recordings to look like this:
    >     - Voices of The Void - %Filename Formatting%
    >     - Filename Formatting is configured in `Settings > Advanced > Recording`
-   > - "Source name" (DEPRECATED due to automatic selection of sources being implemented)
-   > 
-   > Please note that the automatic selection works only for the sources types below, hence this part being left in the README:
-   > - Types of sources supported:
-   >     - Window Capture (Windows)
-   >     - Game Capture (Windows)
+   > - "Source name" (DEPRECATED due to automatic selection of sources being implemented) <br>**[SEE FAQ TO SEE HOW IT OPERATES NOW]**
+   >   
    >
    >
    > - "Recordings folder"
@@ -54,3 +50,14 @@ First things first!
    >     - Write here whatever extension you use for your recordings, the "mkv" is put here by default to both show how you should write the extension and also because I believe it's one of the best ones to use at the moment  
    > - "Screenshot extension"
    >     - Write here whatever extension you have your screenshots saved by OBS as, the "png" is put here by default to both show how you should write the extension and also because it's a default one for non-HDR screenshots 
+
+
+## FAQ
+
+   - #### RecORDER doesn't see my Game Capture/Window Capture source and shows "Nothing was found... Did you name your source in different way than in the 'sourceNames' array?" in script log
+      - It's probably happening because you **changed the Game Capture/Window Capture source default name to something else**. <br> 
+      The message shows only when the script checked the names in **"sourceNames"** and found no match with the sources in your scene.<br>
+      **Check if you have put your sources into the array before resetting the script using refresh button and trying again!**
+
+   - #### How should I edit the "sourceNames" when I have no idea how should I put it in the script?
+      - No worries about that, it's not hard and you only have to follow the example already in the script.
