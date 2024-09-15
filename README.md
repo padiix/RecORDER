@@ -78,4 +78,6 @@ First things first!
       **sourceNames = ["votv", "jc", "sc"]**
 
       Make sure it's matching with whatever you have in this little window of your main OBS window:
-      
+      ![image](https://github.com/user-attachments/assets/006c3b41-53c3-468b-ab1c-77586664fadd)
+
+      ### IMPORTANT: IF YOU HAVE MORE THAN ONE GAME CAPTURE/ WINDOW CAPTURE SOURCE,<br> MAKE THE CURRENT ONE YOU ARE USING THE HIGHEST ON THE LIST!
