@@ -71,9 +71,9 @@ def hooked_sh():
     for item in sceneitems:
         source_obj = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(source_obj)
-            if name is source :
                 globalVariables.set_sourceUUID(obs.obs_source_get_uuid(source_obj))
         for source in sourceNames:
+            if name == source :
                 print("Match found!")
                 break
             else:
@@ -136,7 +136,7 @@ def recording_stop_handler(event):
 
         global globalVariables
 
-        if globalVariables.get_gameTitle() is globalVariables.get_defaultRecordingName():
+        if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
             print("Running get_hooked procedure to get current app title...")
             check_if_hooked_and_update_title()
 
@@ -190,7 +190,7 @@ def replay_buffer_handler(event):
         print("------------------------------")
         print("Saving the Replay Buffer...")
         
-        if globalVariables.get_gameTitle() is globalVariables.get_defaultRecordingName():
+        if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
             print("Running get_hooked procedure to get current app title...")
             check_if_hooked_and_update_title()
 
@@ -223,7 +223,7 @@ def screenshot_handler_event(event):
             hooked_sh()    # Respond to selected source hooking to a window
             print("Signals reloaded.")
             
-        if globalVariables.get_gameTitle() is globalVariables.get_defaultRecordingName():
+        if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
             print("Running get_hooked procedure to get current app title...")
             check_if_hooked_and_update_title()
             
