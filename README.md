@@ -60,4 +60,22 @@ First things first!
       **Check if you have put your sources into the array before resetting the script using refresh button and trying again!**
 
    - #### How should I edit the "sourceNames" when I have no idea how should I put it in the script?
-      - No worries about that, it's not hard and you only have to follow the example already in the script.
+      - No worries about that, it's not really hard to do because you have the example already in the script and here below<br><br>
+      EXAMPLE:<br>
+      You have a source that you use for recording game **"Voices of the Void"**, so you called the Game Capture source **"votv"**, where you have all the filters you need to make your recording look as good as it can for you.<br>
+      ***Because you called it different from the "Game Capture", the script does not recognizes it!***
+      <br><br><br>
+      All you need to do is go to the **Scripts** menu
+      ![image](https://github.com/user-attachments/assets/dd309752-52df-4971-a5b4-40b00a31c850) <br><br><br>
+
+      Then, after clicking the **"Edit Script"** button, you will have to find this part of code
+      ![image](https://github.com/user-attachments/assets/7e77834f-54f1-457a-913b-00d444130c51) <br><br><br>
+
+      In here you can put how many source names that you are actually using in your workflow<br>
+      ***Be aware that the script might need to take longer to find the right source the more source names you add, so do try to keep the difference to the neccesary minimum***
+      <br><br>
+      #### Example of the sourceNames array:<br>
+      **sourceNames = ["votv", "jc", "sc"]**
+
+      Make sure it's matching with whatever you have in this little window of your main OBS window:
+      
