@@ -72,7 +72,6 @@ def hooked_sh():
         sceneitem_source = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(sceneitem_source)
         for source in sourceNames:
-            print(f"name == source? {name == source}")
             if name == source :
                 globalVariables.set_sourceUUID(obs.obs_source_get_uuid(sceneitem_source))
                 print("Match found!")
