@@ -13,7 +13,7 @@ from pathlib import Path
 
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 # Table of capturing video source names
-sources = ["Game Capture", "Window Capture"]
+sourceNames = ["Game Capture", "Window Capture"]
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 
 
@@ -32,7 +32,7 @@ file_changed_sh_ref = None
 def file_changed_sh():
     """Signal handler function reacting to automatic file splitting."""
     global file_changed_sh_ref
-    if not file_changed_sh_ref:    
+    if not file_changed_sh_ref:
         output = obs.obs_frontend_get_recording_output()
         file_changed_sh_ref = obs.obs_output_get_signal_handler(output)
         obs.signal_handler_connect(file_changed_sh_ref, "file_changed", file_changed_cb)
@@ -43,11 +43,11 @@ def file_changed_cb(calldata):
     
     print("------------------------------")
     print("Recording automatic splitting detected!")
-    print("Moving saved recording...")
-
+    
     global globalVariables
     globalVariables.set_currentRecording(find_latest_file(globalVariables.get_outputDir(), globalVariables.get_recordingExtensionMask()))
 
+    print("Moving saved recording...")
     rec = Recording(customPath=globalVariables.get_currentRecording())
     rec.create_new_folder()
     rec.remember_and_move()
@@ -59,8 +59,8 @@ def file_changed_cb(calldata):
     print("------------------------------")
     
 def hooked_sh():
-    global sources, globalVariables
     source_obj = None
+    global sourceNames, globalVariables
     
     print("Checking available sources for a match with source table...")
     
@@ -71,9 +71,9 @@ def hooked_sh():
     for item in sceneitems:
         source_obj = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(source_obj)
-        for source in sources:
             if name is source :
                 globalVariables.set_sourceUUID(obs.obs_source_get_uuid(source_obj))
+        for source in sourceNames:
                 print("Match found!")
                 break
             else:
@@ -119,15 +119,12 @@ def start_recording_handler(event):
         print("Signals reloaded!\n")
         print("Reseting the recording related values...")
 
-        
-
         globalVariables.set_isRecording(True)
         globalVariables.set_currentRecording(None)
         globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
 
         print("------------------------------")
         print(f"Recording started: {'Yes' if globalVariables.get_isRecording() else 'No'}")
-        print(f"Current recording is {globalVariables.get_currentRecording()}")
         print(f"Current game title: {globalVariables.get_gameTitle()}")
         print("------------------------------")
 
