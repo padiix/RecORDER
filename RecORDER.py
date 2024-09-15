@@ -85,7 +85,7 @@ def hooked_sh():
     obs.obs_source_release(current_scene_as_source)
     
     if not globalVariables.get_sourceUUID():
-        print ("Nothing was found... Did you name your source in different way than in the 'source' array?")
+        print ("Nothing was found... Did you name your source in different way than in the 'sourceNames' array?")
     
     
     # print("Fetching the signal handler from the matching source...")
@@ -660,8 +660,8 @@ def script_description():
         "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
         "<small>Created by:</small> <b>padii</b><br><br>"
         ""
-        "<h4>Please, make sure that your screen/game capturing source is matching the 'source' array in the script!</h4>"
-        "You can view the script by pressing 'Edit script' button while RecORDER.py is selected"
+        "<h4>Please, make sure that your screen/game capturing source name is matching the 'sourceNames' array in the script!</h4>"
+        "Fell free to edit the array in the script by pressing 'Edit script' button while RecORDER.py is selected"
         "<h4>Settings:</h4>"
     )
     return desc

@@ -40,12 +40,8 @@ First things first!
    > - "Add name of the game as a recording prefix" checkbox - if you want your recordings to look like this:
    >     - Voices of The Void - %Filename Formatting%
    >     - Filename Formatting is configured in `Settings > Advanced > Recording`
-   > - "Source name" (DEPRECATED due to automatic selection of sources being implemented)
-   > 
-   > Please note that the automatic selection works only for the sources types below, hence this part being left in the README:
-   > - Types of sources supported:
-   >     - Window Capture (Windows)
-   >     - Game Capture (Windows)
+   > - "Source name" (DEPRECATED due to automatic selection of sources being implemented) <br>**[SEE FAQ TO SEE HOW IT OPERATES NOW]**
+   >   
    >
    >
    > - "Recordings folder"
@@ -54,3 +50,34 @@ First things first!
    >     - Write here whatever extension you use for your recordings, the "mkv" is put here by default to both show how you should write the extension and also because I believe it's one of the best ones to use at the moment  
    > - "Screenshot extension"
    >     - Write here whatever extension you have your screenshots saved by OBS as, the "png" is put here by default to both show how you should write the extension and also because it's a default one for non-HDR screenshots 
+
+
+## FAQ
+
+   - #### RecORDER doesn't see my Game Capture/Window Capture source and shows "Nothing was found... Did you name your source in different way than in the 'sourceNames' array?" in script log
+      - It's probably happening because you **changed the Game Capture/Window Capture source default name to something else**. <br> 
+      The message shows only when the script checked the names in **"sourceNames"** and found no match with the sources in your scene.<br>
+      **Check if you have put your sources into the array before resetting the script using refresh button and trying again!**
+
+   - #### How should I edit the "sourceNames" when I have no idea how should I put it in the script?
+      - No worries about that, it's not really hard to do because you have the example already in the script and here below<br><br>
+      EXAMPLE:<br>
+      You have a source that you use for recording game **"Voices of the Void"**, so you called the Game Capture source **"votv"**, where you have all the filters you need to make your recording look as good as it can for you.<br>
+      ***Because you called it different from the "Game Capture", the script does not recognizes it!***
+      <br><br><br>
+      All you need to do is go to the **Scripts** menu
+      ![image](https://github.com/user-attachments/assets/dd309752-52df-4971-a5b4-40b00a31c850) <br><br><br>
+
+      Then, after clicking the **"Edit Script"** button, you will have to find this part of code
+      ![image](https://github.com/user-attachments/assets/7e77834f-54f1-457a-913b-00d444130c51) <br><br><br>
+
+      In here you can put how many source names that you are actually using in your workflow<br>
+      ***Be aware that the script might need to take longer to find the right source the more source names you add, so do try to keep the difference to the neccesary minimum***
+      <br><br>
+      #### Example of the sourceNames array:<br>
+      **sourceNames = ["votv", "jc", "sc"]**
+
+      Make sure it's matching with whatever you have in this little window of your main OBS window:
+      ![image](https://github.com/user-attachments/assets/006c3b41-53c3-468b-ab1c-77586664fadd)
+
+      ### IMPORTANT: IF YOU HAVE MORE THAN ONE GAME CAPTURE/ WINDOW CAPTURE SOURCE,<br> MAKE THE CURRENT ONE YOU ARE USING THE HIGHEST ON THE LIST!
