@@ -40,14 +40,14 @@ First things first!
    > - "Add name of the game as a recording prefix" checkbox - if you want your recordings to look like this:
    >     - Voices of The Void - %Filename Formatting%
    >     - Filename Formatting is configured in `Settings > Advanced > Recording`
-   > - "Scene for recording"
-   >     - Pick whatever Scene you fancy right now for recording (if you have more than one)
-   > - "Source name"
-   >     - Select the source that will be the one you use for Window/Application capture
-   >     - It will only work on sources of below type (because it utilizes a string named "title" which is unavailable in others for now):
-   >         - Window Capture (Windows)
-   >         - Game Capture (Windows)
-   >         - Application Audio Output Capture (Windows)
+   > - "Source name" (DEPRECATED due to automatic selection of sources being implemented)
+   > 
+   > Please note that the automatic selection works only for the sources types below, hence this part being left in the README:
+   > - Types of sources supported:
+   >     - Window Capture (Windows)
+   >     - Game Capture (Windows)
+   >
+   >
    > - "Recordings folder"
    >     - Select a directory where all of your recordings go by default, it will let the script organize the place for you ;)
    > - "Recording extension"

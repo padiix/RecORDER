@@ -5,20 +5,21 @@ import os
 import time
 from pathlib import Path
 
-# Rewriting whole script using the Signals!
-# "file_changed" signal = lets move the automatically splitted file to a folder
-# "get_hooked" procedure = if you start recording and the script didn't get yet notified of the hooking, it will check it itself
+# Author: oxypatic! (61553947+padiix@users.noreply.github.com)
 
 # TODO: Implement a way for storing the UUID and Signals that react to it's deletion, etc. (Not figured out by me yet)
 # TODO: Config instead of the Classes storing the data (Need to think if it's necessary, but probably not)
-# TODO: I should think about possibility of automatically selecting the source using the source-specific signal:
-# hooked [https://docs.obsproject.com/reference-sources#source-specific-signals] 
-# show [https://docs.obsproject.com/reference-sources#common-source-signals]
+
+
+# >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
+# Table of capturing video source names
+sources = ["Game Capture", "Window Capture"]
+# >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
+
 
 # Global variables
 
 globalVariables = None
-
 
 # Values supporting smooth working and less calls
 
@@ -41,12 +42,6 @@ def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     
     print("------------------------------")
-    print("Refreshing sourceUUID...")
-    refresh_source_uuid()
-
-    print("Running get_hooked procedure to get current app title...")
-    check_if_hooked_and_update_title()
-
     print("Recording automatic splitting detected!")
     print("Moving saved recording...")
 
@@ -63,6 +58,48 @@ def file_changed_cb(calldata):
     print(f"New path: {rec.get_newPath()}")
     print("------------------------------")
     
+def hooked_sh():
+    global sources, globalVariables
+    source_obj = None
+    
+    print("Checking available sources for a match with source table...")
+    
+    current_scene_as_source = obs.obs_frontend_get_current_scene()
+    scene = obs.obs_scene_from_source(current_scene_as_source)
+
+    sceneitems = obs.obs_scene_enum_items(scene)
+    for item in sceneitems:
+        source_obj = obs.obs_sceneitem_get_source(item)
+        name = obs.obs_source_get_name(source_obj)
+        for source in sources:
+            if name is source :
+                globalVariables.set_sourceUUID(obs.obs_source_get_uuid(source_obj))
+                print("Match found!")
+                break
+            else:
+                print("Not found... Looking further")
+                obs.obs_source_release(source_obj)
+
+    obs.sceneitem_list_release(sceneitems)
+    obs.obs_source_release(current_scene_as_source)
+    
+    if not source_obj:
+        print ("Nothing was found... Did you name your source in different way than in the 'source' array?")
+    
+    obs.obs_source_release(source_obj)
+    
+    # print("Fetching the signal handler from the matching source...")
+    source_sh_ref = obs.obs_source_get_signal_handler(source_obj)
+    # print("Connecting the source signal handler to 'hooked' signal...")
+    obs.signal_handler_connect(source_sh_ref, "hooked", hooked_cb)
+    
+def hooked_cb(calldata):
+    global globalVariables
+    print("Fetching data from calldata...")
+
+    globalVariables.set_gameTitle(obs.calldata_string(calldata, "title"))
+    print(f"gameTitle: {globalVariables.get_gameTitle()}")
+
 
 # EVENTS
 
@@ -70,16 +107,19 @@ def start_recording_handler(event):
     """Event function reacting to OBS Event of starting the recording."""
 
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTED:
+        global globalVariables
+        
         print("------------------------------")
         print("Recording has started...\n")
-        print("Reloading the signals!\n")
-
+        print("Reloading the signals!")
+        if not globalVariables.get_sourceUUID():
+            hooked_sh()    # Respond to selected source hooking to a window
         file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
         print("Signals reloaded!\n")
         print("Reseting the recording related values...\n")
 
-        global globalVariables
+        
 
         globalVariables.set_isRecording(True)
         globalVariables.set_currentRecording(None)
@@ -95,14 +135,14 @@ def recording_stop_handler(event):
     """Event function reacting to OBS Event of recording fully stopping."""
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
         print("------------------------------")
-        print("Refreshing sourceUUID...")
-        refresh_source_uuid()
-
         print("Recording has stopped, moving the last file into right folder...")
-        print("Running get_hooked procedure to get current app title...")
-        check_if_hooked_and_update_title()
 
         global globalVariables
+
+        if globalVariables.get_gameTitle() is globalVariables.get_defaultRecordingName():
+            print("Running get_hooked procedure to get current app title...")
+            check_if_hooked_and_update_title()
+
 
         rec = Recording()
         rec.create_new_folder()
@@ -121,13 +161,18 @@ def start_buffer_handler(event):
     """Event function reacting to OBS Event of starting the replay buffer."""
 
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
+        global globalVariables
         print("------------------------------")
         print("Replay buffer has started...\n")
-        print("Reloading the signals!\n")
-        print("Signals reloaded!\n")
+        
+        if not globalVariables.get_sourceUUID():
+            print("Reloading the signals!")
+            hooked_sh()    # Respond to selected source hooking to a window
+            print("Signals reloaded!\n")
+        
         print("Reseting the recording related values...\n")
 
-        global globalVariables
+        
 
         globalVariables.set_isReplayActive(True)
         globalVariables.set_currentRecording(None)
@@ -147,12 +192,10 @@ def replay_buffer_handler(event):
         
         print("------------------------------")
         print("Saving the Replay Buffer...")
-
-        print("Refreshing sourceUUID...")
-        refresh_source_uuid()
-
-        print("Running get_hooked procedure to get current app title...")
-        check_if_hooked_and_update_title()
+        
+        if globalVariables.get_gameTitle() is globalVariables.get_defaultRecordingName():
+            print("Running get_hooked procedure to get current app title...")
+            check_if_hooked_and_update_title()
 
         rec = Recording(isReplay=globalVariables.get_isReplayActive())
         rec.create_new_folder()
@@ -176,13 +219,18 @@ def screenshot_handler_event(event):
     
     if event == obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN:
         print("------------------------------")
-        print("Taking the screenshot...")
-
-        print("Refreshing sourceUUID...")
-        refresh_source_uuid()
-
-        print("Running get_hooked procedure to get current app title...")
-        check_if_hooked_and_update_title()
+        global globalVariables
+        
+        if not globalVariables.get_sourceUUID():
+            print("Reloading the signals...")
+            hooked_sh()    # Respond to selected source hooking to a window
+            print("Signals reloaded.")
+            
+        if globalVariables.get_gameTitle() is globalVariables.get_defaultRecordingName():
+            print("Running get_hooked procedure to get current app title...")
+            check_if_hooked_and_update_title()
+            
+        print("User took the screenshot...")
         
         scrnst = Screenshot()
         scrnst.create_new_folder()
@@ -265,84 +313,12 @@ def remove_unusable_title_characters(title: str):
 
     return title
 
-def get_recording_source_uuid(configured_source):
-    """Checks if the source selected by user exists in the scene and returns found information.
-
-    Returns:
-        UUID: Source UUID or None
-    """
-
-    current_scene_as_source = obs.obs_frontend_get_current_scene()
-
-    if current_scene_as_source:
-        current_scene = obs.obs_scene_from_source(current_scene_as_source)
-        scene_item = obs.obs_scene_find_source_recursive(
-            current_scene, configured_source
-        )
-        if scene_item:
-            source = obs.obs_sceneitem_get_source(scene_item)
-            source_uuid = obs.obs_source_get_uuid(source)
-        else:
-            source_uuid = None
-
-    obs.obs_source_release(current_scene_as_source)
-
-    return source_uuid
-
-def refresh_source_uuid():
-    global sett, globalVariables
-    s_name = obs.obs_data_get_string(sett, "source")
-
-    if len(s_name) > 0:
-        try:
-            globalVariables.set_sourceUUID(get_recording_source_uuid(s_name))
-            if globalVariables.get_sourceUUID() is None:
-                raise TypeError
-        except TypeError:
-            print("Source not selected, please refresh and re-select")
-            globalVariables.set_sourceUUID(None)
-    else:
-        globalVariables.set_sourceUUID(None)
-
 def find_latest_file(folder_path: str, file_type: str):
     files = glob.glob(folder_path + file_type)
     if files:
         max_file = max(files, key=os.path.getctime)
         return os.path.normpath(max_file)
 
-# def UUID_of_sel_src(props, prop, *args, **kwargs):
-#     p = obs.obs_properties_get(props, "src_uuid")
-#     refresh_source_uuid()
-#     obs.obs_property_set_description(p, f"UUID: {globalVariables.get_sourceUUID()}")
-#     return True
-
-def populate_list_property_with_source_names(list_property):
-    current_scene_as_source = obs.obs_frontend_get_current_scene()
-    scene = obs.obs_scene_from_source(current_scene_as_source)
-    
-    obs.obs_property_list_clear(list_property)
-    sceneitems = obs.obs_scene_enum_items(scene)
-    obs.obs_property_list_clear(list_property)
-    obs.obs_property_list_add_string(list_property, "", "")
-    for item in sceneitems:
-        source = obs.obs_sceneitem_get_source(item)
-        name = obs.obs_source_get_name(source)
-        obs.obs_property_list_add_string(list_property, name, name)
-    
-    obs.sceneitem_list_release(sceneitems)
-    obs.obs_source_release(current_scene_as_source)
-
-def refresh_source_list(props, prop, *args, **kwargs):
-    lst = obs.obs_properties_get(props, "source")
-    populate_list_property_with_source_names(lst)
-    refresh_source_uuid()
-    
-    # p = obs.obs_properties_get(props, "src_uuid")
-    # obs.obs_property_set_description(p, f"UUID: {sourceUUID}")
-    return True
-
-def refresh_pressed(props, prop):
-    print("Refreshed sources list!")
 
 
 # CLASSES
@@ -429,12 +405,15 @@ class GlobalVariables:
     
     def set_sourceUUID(self, value: str):
         self.sourceUUID = value
+        
+    # ---
     
     def unload_func(self):
         self.addTitleBool = None
         self.recordingExtension = None
         self.screenshotExtension = None
         self.defaultRecordingName = None
+        self.sourceUUID = None
         self.isRecording = None
         self.isReplayActive = None
         self.currentRecording = None
@@ -667,6 +646,9 @@ def script_update(settings):
     global sett
     sett = settings
     
+    # Reloading the signal for hooking
+    hooked_sh()        # Respond to selected source hooking to a window
+    
     # Fetching the Settings
     titleBool = obs.obs_data_get_bool(settings, "title_before_bool")
     rcrdExt=obs.obs_data_get_string(settings, "extension")
@@ -697,28 +679,6 @@ def script_properties():
         bool_p,
         "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
     )
-
-    # Source list
-    sources_for_recording = obs.obs_properties_add_list(
-        props,
-        "source",
-        "Capturing source name",
-        obs.OBS_COMBO_TYPE_LIST,
-        obs.OBS_COMBO_FORMAT_STRING,
-    )
-
-    populate_list_property_with_source_names(sources_for_recording)
-    # obs.obs_property_set_modified_callback(sources_for_recording, UUID_of_sel_src)
-
-    # Refresh button!
-    b = obs.obs_properties_add_button(
-        props, "button", "Refresh source list", refresh_pressed
-    )
-    obs.obs_property_set_modified_callback(b, refresh_source_list)
-
-    # UUID of the selected source (debugging only)
-    # uuid_text = obs.obs_properties_add_text(props, "src_uuid", "", obs.OBS_TEXT_INFO)
-    # obs.obs_property_set_modified_callback(uuid_text, UUID_of_sel_src)
 
     # Output directory
     obs.obs_properties_add_path(
