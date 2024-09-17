@@ -293,7 +293,7 @@ def gh_isHooked(calldata) -> bool:
     return obs.calldata_bool(calldata, "hooked")
 
 def gh_title(calldata) -> str:
-    return remove_unusable_title_characters(obs.calldata_string(calldata, "title"))
+    return obs.calldata_string(calldata, "title")
 
 
 # HELPER FUNCTIONS
@@ -392,7 +392,7 @@ class GlobalVariables:
         return self.gameTitle
     
     def set_gameTitle(self, value: str):
-        self.gameTitle = value
+        self.gameTitle = remove_unusable_title_characters(value)
         
     def get_outputDir(self):
         return self.outputDir
