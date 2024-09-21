@@ -70,10 +70,10 @@ class GlobalVariables:
         return self.screenshotExtension
     
     def get_recordingExtensionMask(self):
-        return f"\*{self.recordingExtension}"
+        return f"*.{self.recordingExtension}"
     
     def get_screenshotExtensionMask(self):
-        return f"\*{self.recordingExtension}"
+        return f"*.{self.recordingExtension}"
     
     def get_ttw(self):
         return self.ttw
@@ -336,7 +336,8 @@ def remove_unusable_title_characters(title: str):
     return title
 
 def find_latest_file(folder_path: str, file_type: str):
-    files = glob(osPath.join(folder_path,file_type))
+    path_with_mask = osPath.join(folder_path, file_type)
+    files = glob(path_with_mask)
     if files:
         max_file = max(files, key=osPath.getctime)
         return osPath.normpath(max_file)
