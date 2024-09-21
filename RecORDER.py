@@ -550,6 +550,14 @@ def scenecollection_changing_event(event):
         globalVariables.unload_func()
         file_changed_sh_ref = None
         
+        if obs.obs_frontend_recording_active():
+            print("Stopping recording...")
+            obs.obs_frontend_recording_stop()
+        
+        if obs.obs_frontend_replay_buffer_active():
+            print("Stopping replay...")
+            obs.obs_frontend_replay_buffer_stop()
+        
 
 # PROCEDURES
 
