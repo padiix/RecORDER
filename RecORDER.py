@@ -1,5 +1,5 @@
-from asyncio import run as run_async
-from asyncio import sleep as sleep_async
+import asyncio
+import threading
 from glob import glob
 from os import makedirs
 from os import path as osPath
@@ -70,10 +70,10 @@ class GlobalVariables:
         return self.screenshotExtension
     
     def get_recordingExtensionMask(self):
-        return "\*" + self.recordingExtension
+        return f"*.{self.recordingExtension}"
     
     def get_screenshotExtensionMask(self):
-        return "\*" + self.screenshotExtension
+        return f"*.{self.recordingExtension}"
     
     def get_ttw(self):
         return self.ttw
@@ -194,7 +194,7 @@ class Recording:
             str: name of the recording
         """
         if self.addTitleBool:
-            return self.gameTitle + " - " + self.get_filename()
+            return f"{self.gameTitle} - {self.get_filename()}"
         else:
             return self.get_filename()
 
@@ -270,7 +270,7 @@ class Screenshot:
             str: name of the recording
         """
         if self.addTitleBool:
-            return self.gameTitle + " - " + self.get_filename()
+            return f"{self.gameTitle} - {self.get_filename()}"
         else:
             return self.get_filename()
 
@@ -312,13 +312,18 @@ async def remember_and_move(old, new) -> None:
             exc = str(e)
             
         if exc:
-            await sleep_async(ttw)
+            await asyncio.sleep(ttw)
             ttw *= 2
         else:
             break
-
+    
+    print(">remember_and_move<>remember_and_move<>remember_and_move<")
+    if new_dir is None:
+        print("(Asyncio) File was not moved, because the path provided was not suitable.")
+    
     print("(Asyncio) Done!")
     print(f"(Asyncio) File moved to: {new_dir}")
+    print(">remember_and_move<>remember_and_move<>remember_and_move<")
 
 
 # HELPER FUNCTIONS
@@ -336,11 +341,17 @@ def remove_unusable_title_characters(title: str):
     return title
 
 def find_latest_file(folder_path: str, file_type: str):
-    files = glob(folder_path + file_type)
+    path_with_mask = osPath.join(folder_path, file_type)
+    files = glob(path_with_mask)
     if files:
         max_file = max(files, key=osPath.getctime)
         return osPath.normpath(max_file)
 
+def rec_file_asyncio(rec):
+    asyncio.run(remember_and_move(rec.get_oldPath(), rec.get_newPath()))
+
+def scrnst_file_asyncio(scrnst):
+    asyncio.run(remember_and_move(scrnst.get_oldPath(), scrnst.get_newPath()))
 
 # SIGNAL-RELATED
 
@@ -356,26 +367,26 @@ def file_changed_sh():
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     
-    print("[]--------------------------[]")
-    print("Recording automatic splitting detected!")
+    print("<>--------------------------<>")
+    print("Recording automatic splitting detected!\n")
     
     global globalVariables
     globalVariables.set_currentRecording(find_latest_file(globalVariables.get_outputDir(), globalVariables.get_recordingExtensionMask()))
 
     if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
-            print("Running get_hooked procedure to get current app title...")
+            print("Running get_hooked procedure to get current app title...\n")
             check_if_hooked_and_update_title()
-
-    print(">--------------------------<")
     
-    print("Moving saved recording...\n")
+    print("Moving saved recording...")
     rec = Recording(customPath=globalVariables.get_currentRecording())
     rec.create_new_folder()
-    run_async(remember_and_move(rec.get_oldPath(), rec.get_newPath()))
+    thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
+    thread.start()
     
-    print("[]--------------------------[]\n")
+    print("<>--------------------------<>\n")
     
 def hooked_sh():
+    print("<>--------------------------<>")
     global sourceNames, globalVariables
     sceneitem_source = None
     
@@ -405,13 +416,17 @@ def hooked_sh():
     source_sh_ref = obs.obs_source_get_signal_handler(sceneitem_source)
     # print("Connecting the source signal handler to 'hooked' signal...")
     obs.signal_handler_connect(source_sh_ref, "hooked", hooked_cb)
+    print("<>--------------------------<>\n")
     
 def hooked_cb(calldata):
+    print("<<>>--------------------------<<>>")
     global globalVariables
+    
     print("Fetching data from calldata...")
 
     globalVariables.set_gameTitle(obs.calldata_string(calldata, "title"))
     print(f"gameTitle: {globalVariables.get_gameTitle()}")
+    print("<<>>--------------------------<<>>")
 
 
 # EVENTS
@@ -424,7 +439,7 @@ def start_recording_handler(event):
         
         print("[]--------------------------[]")
         print("Recording has started...\n")
-        print("Reloading the signals!")
+        print("Reloading the signals!\n")
         if not globalVariables.get_sourceUUID():
             hooked_sh()    # Respond to selected source hooking to a window
         file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
@@ -436,7 +451,7 @@ def start_recording_handler(event):
         globalVariables.set_currentRecording(None)
         globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
 
-        print(">--------------------------<")
+        print(">--------------------------<\n")
         print(f"Recording started: {'Yes' if globalVariables.get_isRecording() else 'No'}")
         print(f"Current game title: {globalVariables.get_gameTitle()}")
         print("[]--------------------------[]\n")
@@ -445,20 +460,20 @@ def recording_stop_handler(event):
     """Event function reacting to OBS Event of recording fully stopping."""
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
         print("[]--------------------------[]")
-        print("Recording has stopped, moving the last file into right folder...")
+        print("Recording has stopped, moving the last file into right folder...\n")
 
         global globalVariables
 
         if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
-            print("Running get_hooked procedure to get current app title...")
+            print("Running get_hooked procedure to get current app title...\n")
             check_if_hooked_and_update_title()
 
 
         rec = Recording()
         rec.create_new_folder()
-        run_async(remember_and_move(rec.get_oldPath(), rec.get_newPath()))
+        thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
+        thread.start()
         
-        print(">--------------------------<")
         print("Job's done. The file was moved.")
         globalVariables.set_currentRecording(None)
         globalVariables.set_isRecording(False)
@@ -506,7 +521,8 @@ def replay_buffer_handler(event):
 
         rec = Recording(isReplay=globalVariables.get_isReplayActive())
         rec.create_new_folder()
-        run_async(remember_and_move(rec.get_oldPath(), rec.get_newPath()))
+        thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
+        thread.start()
         
         print("[]--------------------------[]\n")
            
@@ -539,7 +555,8 @@ def screenshot_handler_event(event):
         
         scrnst = Screenshot()
         scrnst.create_new_folder()
-        run_async(remember_and_move(scrnst.get_oldPath(), scrnst.get_newPath()))
+        thread = threading.Thread(target=scrnst_file_asyncio, name="remember_and_move", args=(scrnst,))
+        thread.start()
         
         print("[]--------------------------[]\n")
 
@@ -549,6 +566,14 @@ def scenecollection_changing_event(event):
         print("Scene Collection changing detected, freeing globals to avoid issues...")
         globalVariables.unload_func()
         file_changed_sh_ref = None
+        
+        if obs.obs_frontend_recording_active():
+            print("Stopping recording...")
+            obs.obs_frontend_recording_stop()
+        
+        if obs.obs_frontend_replay_buffer_active():
+            print("Stopping replay...")
+            obs.obs_frontend_replay_buffer_stop()
         
 
 # PROCEDURES
