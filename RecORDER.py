@@ -323,7 +323,7 @@ async def remember_and_move(old, new) -> None:
     
     print("(Asyncio) Done!")
     print(f"(Asyncio) File moved to: {new_dir}")
-    print(">remember_and_move<>remember_and_move<>remember_and_move<")
+    print(">remember_and_move<>remember_and_move<>remember_and_move<\n")
 
 
 # HELPER FUNCTIONS
