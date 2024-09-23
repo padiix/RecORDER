@@ -5,9 +5,9 @@
 > Script was tested only on Windows 11
 
 ## What does this script does?
-To put it simply, it tries to be the NVIDIA Shadowplay and organize your recordings.
+To put it simply, it tries to be the organizing function of NVIDIA Shadow Play.
 
-Once you configure it you don't have to worry about anything else, because from now on your recordings as well as replays will be sorted for you.
+Once you configure it you don't have to worry about anything else, because from now on your recordings as well as replays or screenshots will be sorted for you.
 
 
 > Tested only on **3.11.4**, but it might work on earlier minor versions, though you can try it at your own risk!
