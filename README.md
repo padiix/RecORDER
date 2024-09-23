@@ -10,18 +10,19 @@ To put it simply, it tries to be the organizing function of NVIDIA Shadow Play.
 Once you configure it you don't have to worry about anything else, because from now on your recordings as well as replays or screenshots will be sorted for you.
 
 
-> Tested only on **3.11.4**, but it might work on earlier minor versions, though you can try it at your own risk!
+> Tested only on **3.11.4**, but it might work on other versions as long as there are no big changes!
 
 ## Features of the script
-In case of fullscreen applications:
+In case of fullscreen applications (mentioned as **it** below):
 - Moves recordings to a folder named after it
 - Moves replay buffer recordings to folders named after it
+- Moves screenshots to folders named after it
 - When automatic splitting is enabled, it will also move actively move all of the recordings to folder named after it
 
 Other features:
 - Verbose output of the script in the logs - you should be able to see the most important stuff on the go when available
 
-If not recording a fullscreen app, it will move any recording/replay buffer to a folder named "Manual Recording"
+If not recording a fullscreen app, it will move any recording/replay buffer to a folder named **"Manual Recording"**
 
 
 ## What do I need to do to make it work?
