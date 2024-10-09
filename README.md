@@ -1,4 +1,4 @@
-# RecORDER
+![Logo](https://github.com/user-attachments/assets/09d4c727-8128-4219-9665-6a0aff251482)
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
