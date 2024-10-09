@@ -1,35 +1,37 @@
 ![Logo](https://github.com/user-attachments/assets/09d4c727-8128-4219-9665-6a0aff251482)
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-> Script was tested only on Windows 11
+> Script was tested only on Windows 11, but it allegedly works on other OSes as well
+
+**‼️Script only works with OBS in version 29.0.0 or higher‼️**
 
 ## What does this script does?
-To put it simply, it tries to be the organizing function of NVIDIA Shadow Play.
+To put it simply, it tries to mimic the recordings organization of NVIDIA Shadow Play.
 
-Once you configure it you don't have to worry about anything else, because from now on your recordings as well as replays or screenshots will be sorted for you.
+Once configured - you don't have to worry about anything. From now on your recordings/replays/screenshots will be automatically sorted for you.
 
 
 > Tested only on **3.11.4**, but it might work on other versions as long as there are no big changes!
 
 ## Features of the script
-In case of fullscreen applications (mentioned as **it** below):
+In case of fullscreen applications/ hooked windows (mentioned as **it** below):
 - Moves recordings to a folder named after it
 - Moves replay buffer recordings to folders named after it
 - Moves screenshots to folders named after it
-- When automatic splitting is enabled, it will also move actively move all of the recordings to folder named after it
+- When automatic splitting is enabled, it will also actively move all of the split recordings to relevant folder as in recordings case
 
 Other features:
-- Verbose output of the script in the logs - you should be able to see the most important stuff on the go when available
+- Verbose logs of the script - you should be able to see the important information on the go when viewing `Script Logs`
 
-If not recording a fullscreen app, it will move any recording/replay buffer to a folder named **"Manual Recording"**
+If the Game Capture or Window Capture is not hooked to any app, it will organize saved recording/replay buffer in a folder called **"Manual Recording"**
 
 
 ## What do I need to do to make it work?
 First things first!
-####
-1. You need Python - a version [3.11](https://www.python.org/downloads/release/python-3110/) will probably work the best, can be newer.
-   > You still need the version within 3.11 for best compatibility
+1. You need Python - a version [3.11](https://www.python.org/downloads/release/python-3110/) will probably work the best, but you can use newer.
+   > You might need the version within 3.11 for best compatibility
 2. Next you need to configure the Python - it's located under `Tools > Scripts > Python Settings` inside of OBS.
    > Select the root folder of where the Python resides, it should be called something like `Python311`
 3. You are half way there, next you need to add the script in the `Tools > Scripts`
@@ -41,16 +43,13 @@ First things first!
    > - "Add name of the game as a recording prefix" checkbox - if you want your recordings to look like this:
    >     - Voices of The Void - %Filename Formatting%
    >     - Filename Formatting is configured in `Settings > Advanced > Recording`
-   > - "Source name" (DEPRECATED due to automatic selection of sources being implemented) <br>**[SEE FAQ TO SEE HOW IT OPERATES NOW]**
-   >   
-   >
-   >
    > - "Recordings folder"
-   >     - Select a directory where all of your recordings go by default, it will let the script organize the place for you ;)
+   >     - Select a directory where OBS saves your recordings to, it will allow the script to organize them for you ;)
    > - "Recording extension"
-   >     - Write here whatever extension you use for your recordings, the "mkv" is put here by default to both show how you should write the extension and also because I believe it's one of the best ones to use at the moment  
+   >     - Write here extension of your **recordings** (the "mkv" is set default to showcase how to write the extension and because it's recommended one for now)
+   >     - [Usefull discussion to understand why use MKV instead of other containers for now](https://www.reddit.com/r/letsplay/comments/7xtssw/mkv_vs_mp4_container_in_obs_deep_discussion/)  
    > - "Screenshot extension"
-   >     - Write here whatever extension you have your screenshots saved by OBS as, the "png" is put here by default to both show how you should write the extension and also because it's a default one for non-HDR screenshots 
+   >     - Write here extension of your **screenshots** saved by OBS as (the "png" is set default to showcase how to write the extension and it's a default for non-HDR screenshots) 
 
 
 ## FAQ
@@ -80,5 +79,5 @@ First things first!
 
       Make sure it's matching with whatever you have in this little window of your main OBS window:
       ![image](https://github.com/user-attachments/assets/006c3b41-53c3-468b-ab1c-77586664fadd)
-
-      ### IMPORTANT: IF YOU HAVE MORE THAN ONE GAME CAPTURE/ WINDOW CAPTURE SOURCE,<br> MAKE THE CURRENT ONE YOU ARE USING THE HIGHEST ON THE LIST!
+     ### IMPORTANT:
+     IF YOU HAVE MORE THAN ONE GAME CAPTURE/ WINDOW CAPTURE SOURCE,<br> MAKE THE CURRENT ONE YOU ARE USING THE HIGHEST ON THE LIST!
