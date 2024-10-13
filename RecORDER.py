@@ -2,7 +2,7 @@ import asyncio
 import threading
 from glob import glob
 from os import makedirs
-from os import path as osPath
+from os import path as os_path
 from pathlib import Path
 from re import sub
 from shutil import move as move_file
@@ -21,16 +21,6 @@ sourceNames = ["Game Capture", "Window Capture"]
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 
 
-# Global variables
-
-globalVariables = None
-
-# Values supporting smooth working and less calls
-
-sett = None
-file_changed_sh_ref = None
-
-
 # CLASSES
 
 class GlobalVariables:
@@ -38,132 +28,132 @@ class GlobalVariables:
     
     def __init__(self):
         #[PROPERTIES]
-        self.addTitleBool = None
-        self.recordingExtension = None
-        self.screenshotExtension = None
-        self.ttw = 0.5
+        self.add_game_title_to_recording_name = None
+        self.recording_extension = None
+        self.screenshot_extension = None
+        self.time_to_wait = 0.5
         
         #[Related to RECORDING]
         self.defaultRecordingName = "Manual Recording"
         self.isRecording = False
         self.isReplayActive = False
-        self.currentRecording = None
-        self.gameTitle = self.defaultRecordingName
-        self.outputDir = None
-        self.sourceUUID = None
+        self.current_recording_path = None
+        self.game_title = self.defaultRecordingName
+        self.output_directory = None
+        self.source_uuid = None
         
-    def load_func(self, titleBool: bool, rcrdExt: str, scrnstExt: str, outDir: str):
-        self.addTitleBool = titleBool
-        self.recordingExtension = rcrdExt
-        self.screenshotExtension = scrnstExt
-        self.outputDir = outDir
+    def load_func(self, add_game_title_to_recording_name: bool, recording_extension: str, screenshot_extension: str, output_directory: str):
+        self.add_game_title_to_recording_name = add_game_title_to_recording_name
+        self.recording_extension = recording_extension
+        self.screenshot_extension = screenshot_extension
+        self.output_directory = output_directory
     
     # ---
       
-    def get_addTitleBool(self):
-        return self.addTitleBool
+    def get_add_game_title_to_recording_name(self):
+        return self.add_game_title_to_recording_name
 
-    def get_recordingExtension(self):
-        return self.recordingExtension
+    def get_recording_extension(self):
+        return self.recording_extension
     
-    def get_screenshotExtension(self):
-        return self.screenshotExtension
+    def get_screenshot_extension(self):
+        return self.screenshot_extension
     
-    def get_recordingExtensionMask(self):
-        return f"*.{self.recordingExtension}"
+    def get_recording_extension_mask(self):
+        return f"*.{self.recording_extension}"
     
-    def get_screenshotExtensionMask(self):
-        return f"*.{self.recordingExtension}"
+    def get_screenshot_extension_mask(self):
+        return f"*.{self.recording_extension}"
     
-    def get_ttw(self):
-        return self.ttw
+    def get_time_to_wait(self):
+        return self.time_to_wait
     
     # ---
     
-    def get_defaultRecordingName(self):
+    def get_default_recording_name(self):
         return self.defaultRecordingName
     
-    def get_isRecording(self):
+    def get_is_recording(self):
         return self.isRecording
     
-    def set_isRecording(self, value: bool):
+    def set_is_recording(self, value: bool):
         self.isRecording = value
     
-    def get_isReplayActive(self):
+    def get_is_replay_active(self):
         return self.isReplayActive
         
-    def set_isReplayActive(self, value: bool):
+    def set_is_replay_active(self, value: bool):
         self.isReplayActive = value
     
-    def get_currentRecording(self):
-        return self.currentRecording
+    def get_current_recording(self):
+        return self.current_recording_path
     
-    def set_currentRecording(self, value: str):
-        self.currentRecording = value
+    def set_current_recording(self, value: str or None):
+        self.current_recording_path = value
         
-    def get_gameTitle(self):
-        return self.gameTitle
+    def get_game_title(self):
+        return self.game_title
     
-    def set_gameTitle(self, value: str):
-        self.gameTitle = remove_unusable_title_characters(value)
+    def set_game_title(self, value: str):
+        self.game_title = remove_unusable_title_characters(value)
         
-    def get_outputDir(self):
-        return self.outputDir
+    def get_output_dir(self):
+        return self.output_directory
     
-    def get_sourceUUID(self):
-        return self.sourceUUID
+    def get_source_uuid(self):
+        return self.source_uuid
     
-    def set_sourceUUID(self, value: str):
-        self.sourceUUID = value
+    def set_source_uuid(self, value: str):
+        self.source_uuid = value
         
     # ---
     
     def unload_func(self):
-        self.addTitleBool = None
-        self.recordingExtension = None
-        self.screenshotExtension = None
+        self.add_game_title_to_recording_name = None
+        self.recording_extension = None
+        self.screenshot_extension = None
         self.defaultRecordingName = None
-        self.sourceUUID = None
+        self.source_uuid = None
         self.isRecording = None
         self.isReplayActive = None
-        self.currentRecording = None
-        self.gameTitle = None
-        self.outputDir = None
+        self.current_recording_path = None
+        self.game_title = None
+        self.output_directory = None
     
 class Recording:
     """Class that allows better control over files for the needs of this script"""
 
-    def __init__(self, customPath: str = None, isReplay: bool = False) -> None:
+    def __init__(self, custom_path: str = None, is_replay: bool = False) -> None:
         """Create a file based on either specified path or path that was configured in Scripts settings
 
         Args:
-            customPath (str): Path to a file that needs to be moved
-            isReplay (bool): Set to true if handled recording is from replay buffer
+            custom_path (str): Path to a file that needs to be moved
+            is_replay (bool): Set to true if handled recording is from replay buffer
         """
 
         global globalVariables
 
         self.replaysFolderName = "Replays"
-        self.gameTitle = globalVariables.get_gameTitle()
-        self.addTitleBool = globalVariables.get_addTitleBool()
+        self.gameTitle = globalVariables.get_game_title()
+        self.addTitleBool = globalVariables.get_add_game_title_to_recording_name()
         
         # If this object is created during Replay Buffer handling, it will do additional stuff needed
-        if isReplay:
-            self.isReplay = isReplay
+        if is_replay:
+            self.isReplay = is_replay
         else:
             self.isReplay = False
 
         # Allow to specify a custom path where the file is located.
-        if customPath is not None:
-            self.path = customPath
+        if custom_path is not None:
+            self.path = custom_path
         elif self.isReplay:
             self.path = obs.obs_frontend_get_last_replay()
         elif not self.isReplay:
             self.path = obs.obs_frontend_get_last_recording()
 
         # Prepare paths needed for functions
-        self.dir = osPath.dirname(self.path)
-        self.rawfile = osPath.basename(self.path)
+        self.dir = os_path.dirname(self.path)
+        self.raw_file = os_path.basename(self.path)
 
     def get_filename(self) -> str:
         """Returns the file name
@@ -171,9 +161,9 @@ class Recording:
         Returns:
             str: name of a file
         """
-        return self.rawfile
+        return self.raw_file
 
-    def get_newFolder(self) -> str:
+    def get_new_folder(self) -> str:
         """Returns a path to a folder where recording will be moved to
         If recording is a replay buffer, it will return the path towards the replays folder inside of folder above
 
@@ -181,12 +171,12 @@ class Recording:
             str: name of the new folder where the recording will be located
         """
         if self.isReplay:
-            return osPath.normpath(osPath.join(self.dir, self.gameTitle, self.replaysFolderName))
+            return os_path.normpath(os_path.join(self.dir, self.gameTitle, self.replaysFolderName))
         else:
-            return osPath.normpath(osPath.join(self.dir, self.gameTitle))
+            return os_path.normpath(os_path.join(self.dir, self.gameTitle))
 
 
-    def get_newFilename(self) -> str:
+    def get_new_filename(self) -> str:
         """Returns the name of a file based on the choice of the user
         If user decided to have game title before recording name, it will add it.
 
@@ -198,110 +188,119 @@ class Recording:
         else:
             return self.get_filename()
 
-    def get_oldPath(self) -> str:
+    def get_old_path(self) -> str:
         """Returns previous path the file was located in
 
         Returns:
             str: previous path of file
         """
-        return osPath.normpath(osPath.join(self.dir, self.get_filename()))
+        return os_path.normpath(os_path.join(self.dir, self.get_filename()))
 
-    def get_newPath(self) -> str:
+    def get_new_path(self) -> str:
         """Returns current path where file is located
 
         Returns:
             str: current path of file
         """
-        return osPath.normpath(osPath.join(self.get_newFolder(), self.get_newFilename()))
+        return os_path.normpath(os_path.join(self.get_new_folder(), self.get_new_filename()))
 
     def create_new_folder(self) -> None:
         """Creates a new folder based on title of the captured fullscreen application"""
-        if not osPath.exists(self.get_newFolder()):
-            makedirs(self.get_newFolder())
+        if not os_path.exists(self.get_new_folder()):
+            makedirs(self.get_new_folder())
             
 class Screenshot:
     """Class that allows better control over screenshots for the needs of this script"""
 
-    def __init__(self, customPath: str = None) -> None:
+    def __init__(self, custom_path: str = None) -> None:
         """Create a file based on either specified path or path that was configured in Scripts settings
 
         Args:
-            customPath (str): Path to a file that needs to be moved
-            isReplay (bool): Set to true if handled recording is from replay buffer
+            custom_path (str): Path to a file that needs to be moved
         """
         global globalVariables
 
-        self.screenshotsFolderName = "Screenshots"
-        self.gameTitle = globalVariables.get_gameTitle()
-        self.addTitleBool = globalVariables.get_addTitleBool()
+        self.screenshots_folder_name = "Screenshots"
+        self.game_title = globalVariables.get_game_title()
+        self.add_game_title_to_recording_name = globalVariables.get_add_game_title_to_recording_name()
         
         # Allow to specify a custom path where the file is located.
-        if customPath is not None:
-            self.path = customPath
+        if custom_path is not None:
+            self.path = custom_path
         else:
             self.path = obs.obs_frontend_get_last_screenshot()
 
         # Prepare paths needed for functions
-        self.dir = osPath.dirname(self.path)
-        self.rawfile = osPath.basename(self.path)
+        self.dir = os_path.dirname(self.path)
+        self.raw_file = os_path.basename(self.path)
 
-    def get_filename(self) -> str:
+    def get_file_name(self) -> str:
         """Returns the file name
 
         Returns:
             str: name of a file
         """
-        return self.rawfile
+        return self.raw_file
 
-    def get_newFolder(self) -> str:
+    def get_new_folder(self) -> str:
         """Returns a path to a folder where recording will be moved to
         If recording is a replay buffer, it will return the path towards the replays folder inside of folder above
 
         Returns:
             str: name of the new folder where the recording will be located
         """
-        return osPath.normpath(osPath.join(self.dir, self.gameTitle, self.screenshotsFolderName))
+        return os_path.normpath(os_path.join(self.dir, self.game_title, self.screenshots_folder_name))
 
-    def get_newFilename(self) -> str:
+    def get_new_filename(self) -> str:
         """Returns the name of a file based on the choice of the user
         If user decided to have game title before recording name, it will add it.
 
         Returns:
             str: name of the recording
         """
-        if self.addTitleBool:
-            return f"{self.gameTitle} - {self.get_filename()}"
+        if self.add_game_title_to_recording_name:
+            return f"{self.game_title} - {self.get_file_name()}"
         else:
-            return self.get_filename()
+            return self.get_file_name()
 
-    def get_oldPath(self) -> str:
+    def get_old_path(self) -> str:
         """Returns previous path the file was located in
 
         Returns:
             str: previous path of file
         """
-        return osPath.normpath(osPath.join(self.dir, self.get_filename()))
+        return os_path.normpath(os_path.join(self.dir, self.get_file_name()))
 
-    def get_newPath(self) -> str:
+    def get_new_path(self) -> str:
         """Returns current path where file is located
 
         Returns:
             str: current path of file
         """
-        return osPath.normpath(osPath.join(self.get_newFolder(), self.get_newFilename()))
+        return os_path.normpath(os_path.join(self.get_new_folder(), self.get_new_filename()))
 
     def create_new_folder(self) -> None:
         """Creates a new folder based on title of the captured fullscreen application"""
-        if not osPath.exists(self.get_newFolder()):
-            makedirs(self.get_newFolder())
+        if not os_path.exists(self.get_new_folder()):
+            makedirs(self.get_new_folder())
+
+
+# Global variables
+
+globalVariables = GlobalVariables()
+
+# Values supporting smooth working and fewer calls
+
+sett = None
+file_changed_sh_ref = None
 
 
 # ASYNC FUNCTIONS
 
 async def remember_and_move(old, new) -> None:
-    """Moves the recording to new location using os.renames"""
+    """Moves the recording to new location using 'os.renames'"""
     global globalVariables
-    ttw = globalVariables.get_ttw()
+    ttw = globalVariables.get_time_to_wait()
     
     new_dir = None
     for x in range(0,3):
@@ -341,17 +340,17 @@ def remove_unusable_title_characters(title: str):
     return title
 
 def find_latest_file(folder_path: str, file_type: str):
-    path_with_mask = osPath.join(folder_path, file_type)
+    path_with_mask = os_path.join(folder_path, file_type)
     files = glob(path_with_mask)
     if files:
-        max_file = max(files, key=osPath.getctime)
-        return osPath.normpath(max_file)
+        max_file = max(files, key=os_path.getctime)
+        return os_path.normpath(max_file)
 
 def rec_file_asyncio(rec):
-    asyncio.run(remember_and_move(rec.get_oldPath(), rec.get_newPath()))
+    asyncio.run(remember_and_move(rec.get_old_path(), rec.get_new_path()))
 
-def scrnst_file_asyncio(scrnst):
-    asyncio.run(remember_and_move(scrnst.get_oldPath(), scrnst.get_newPath()))
+def screenshot_file_asyncio(screenshot):
+    asyncio.run(remember_and_move(screenshot.get_old_path(), screenshot.get_new_path()))
 
 # SIGNAL-RELATED
 
@@ -364,6 +363,8 @@ def file_changed_sh():
         obs.signal_handler_connect(file_changed_sh_ref, "file_changed", file_changed_cb)
         obs.obs_output_release(output)
 
+
+# noinspection SpellCheckingInspection,PyUnusedLocal
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
     
@@ -371,14 +372,14 @@ def file_changed_cb(calldata):
     print("Recording automatic splitting detected!\n")
     
     global globalVariables
-    globalVariables.set_currentRecording(find_latest_file(globalVariables.get_outputDir(), globalVariables.get_recordingExtensionMask()))
+    globalVariables.set_current_recording(find_latest_file(globalVariables.get_output_dir(), globalVariables.get_recording_extension_mask()))
 
-    if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
+    if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
             print("Running get_hooked procedure to get current app title...\n")
             check_if_hooked_and_update_title()
     
     print("Moving saved recording...")
-    rec = Recording(customPath=globalVariables.get_currentRecording())
+    rec = Recording(custom_path=globalVariables.get_current_recording())
     rec.create_new_folder()
     thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
     thread.start()
@@ -388,32 +389,33 @@ def file_changed_cb(calldata):
 def hooked_sh():
     print("<>--------------------------<>")
     global sourceNames, globalVariables
-    sceneitem_source = None
+    scene_item_source = None
     
     print("Checking available sources for a match with source table...")
     
     current_scene_as_source = obs.obs_frontend_get_current_scene()
     scene = obs.obs_scene_from_source(current_scene_as_source)
 
-    sceneitems = obs.obs_scene_enum_items(scene)
-    for item in sceneitems:
-        sceneitem_source = obs.obs_sceneitem_get_source(item)
-        name = obs.obs_source_get_name(sceneitem_source)
+    # noinspection PyArgumentList
+    scene_items = obs.obs_scene_enum_items(scene)
+    for item in scene_items:
+        scene_item_source = obs.obs_sceneitem_get_source(item)
+        name = obs.obs_source_get_name(scene_item_source)
         for source in sourceNames:
             if name == source :
-                globalVariables.set_sourceUUID(obs.obs_source_get_uuid(sceneitem_source))
+                globalVariables.set_source_uuid(obs.obs_source_get_uuid(scene_item_source))
                 print("Match found!")
                 break
 
-    obs.sceneitem_list_release(sceneitems)
+    obs.sceneitem_list_release(scene_items)
     obs.obs_source_release(current_scene_as_source)
     
-    if not globalVariables.get_sourceUUID():
+    if not globalVariables.get_source_uuid():
         print ("Nothing was found... Did you name your source in different way than in the 'sourceNames' array?")
     
     
     # print("Fetching the signal handler from the matching source...")
-    source_sh_ref = obs.obs_source_get_signal_handler(sceneitem_source)
+    source_sh_ref = obs.obs_source_get_signal_handler(scene_item_source)
     # print("Connecting the source signal handler to 'hooked' signal...")
     obs.signal_handler_connect(source_sh_ref, "hooked", hooked_cb)
     print("<>--------------------------<>\n")
@@ -424,8 +426,8 @@ def hooked_cb(calldata):
     
     print("Fetching data from calldata...")
 
-    globalVariables.set_gameTitle(obs.calldata_string(calldata, "title"))
-    print(f"gameTitle: {globalVariables.get_gameTitle()}")
+    globalVariables.set_game_title(obs.calldata_string(calldata, "title"))
+    print(f"gameTitle: {globalVariables.get_game_title()}")
     print("<<>>--------------------------<<>>")
 
 
@@ -441,27 +443,27 @@ def recording_handler(event):
         print("[]--------------------------[]")
         print("Recording has started...\n")
         print("Reloading the signals!\n")
-        if not globalVariables.get_sourceUUID():
+        if not globalVariables.get_source_uuid():
             hooked_sh()    # Respond to selected source hooking to a window
         file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
         print("Signals reloaded!\n")
-        print("Reseting the recording related values...\n")
+        print("Resetting the recording related values...\n")
 
-        globalVariables.set_isRecording(True)
-        globalVariables.set_currentRecording(None)
-        globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
+        globalVariables.set_is_recording(True)
+        globalVariables.set_current_recording(None)
+        globalVariables.set_game_title(globalVariables.get_default_recording_name())
 
         print(">--------------------------<\n")
-        print(f"Recording started: {'Yes' if globalVariables.get_isRecording() else 'No'}")
-        print(f"Current game title: {globalVariables.get_gameTitle()}")
+        print(f"Recording started: {'Yes' if globalVariables.get_is_recording() else 'No'}")
+        print(f"Current game title: {globalVariables.get_game_title()}")
         print("[]--------------------------[]\n")
 
     elif event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
         print("[]--------------------------[]")
         print("Recording has stopped, moving the last file into right folder...\n")
 
-        if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
+        if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
             print("Running get_hooked procedure to get current app title...\n")
             check_if_hooked_and_update_title()
 
@@ -472,8 +474,8 @@ def recording_handler(event):
         thread.start()
 
         print("Job's done. The file was moved.")
-        globalVariables.set_currentRecording(None)
-        globalVariables.set_isRecording(False)
+        globalVariables.set_current_recording(None)
+        globalVariables.set_is_recording(False)
         print("[]--------------------------[]\n")
 
 
@@ -486,32 +488,32 @@ def replay_buffer_handler(event):
         print("[]--------------------------[]")
         print("Replay buffer has started...\n")
 
-        if not globalVariables.get_sourceUUID():
+        if not globalVariables.get_source_uuid():
             print("Reloading the signals!")
             hooked_sh()  # Respond to selected source hooking to a window
             print("Signals reloaded!\n")
 
-        print("Reseting the recording related values...\n")
+        print("Resetting the recording related values...\n")
 
-        globalVariables.set_isReplayActive(True)
-        globalVariables.set_currentRecording(None)
-        globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
+        globalVariables.set_is_replay_active(True)
+        globalVariables.set_current_recording(None)
+        globalVariables.set_game_title(globalVariables.get_default_recording_name())
 
         print(">--------------------------<")
-        print(f"Replay active? {'Yes' if globalVariables.get_isReplayActive() else 'No'}")
-        print(f"CurrentRecording is {globalVariables.get_currentRecording()}")
-        print(f"Game title set to {globalVariables.get_gameTitle()}")
+        print(f"Replay active? {'Yes' if globalVariables.get_is_replay_active() else 'No'}")
+        print(f"CurrentRecording is {globalVariables.get_current_recording()}")
+        print(f"Game title set to {globalVariables.get_game_title()}")
         print("[]-------------------------[]\n")
 
     elif event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
         print("[]--------------------------[]")
         print("Saving the Replay Buffer...")
         
-        if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
+        if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
             print("Running get_hooked procedure to get current app title...")
             check_if_hooked_and_update_title()
 
-        rec = Recording(isReplay=globalVariables.get_isReplayActive())
+        rec = Recording(is_replay=globalVariables.get_is_replay_active())
         rec.create_new_folder()
         thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
         thread.start()
@@ -519,10 +521,10 @@ def replay_buffer_handler(event):
         print("[]--------------------------[]\n")
 
     elif event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED:
-        globalVariables.set_isReplayActive(False)
+        globalVariables.set_is_replay_active(False)
 
         print("[]--------------------------[]")
-        print(f"Replay active? {'Yes' if globalVariables.get_isReplayActive() else 'No'}")
+        print(f"Replay active? {'Yes' if globalVariables.get_is_replay_active() else 'No'}")
         print("[]--------------------------[]\n")
            
 
@@ -533,26 +535,27 @@ def screenshot_handler_event(event):
         print("[]--------------------------[]")
         global globalVariables
         
-        if not globalVariables.get_sourceUUID():
+        if not globalVariables.get_source_uuid():
             print("Reloading the signals...")
             hooked_sh()    # Respond to selected source hooking to a window
             print("Signals reloaded.")
         
-        if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
+        if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
             print("Running get_hooked procedure to get current app title...")
             check_if_hooked_and_update_title()
             
         print("User took the screenshot...")
         
-        scrnst = Screenshot()
-        scrnst.create_new_folder()
-        thread = threading.Thread(target=scrnst_file_asyncio, name="remember_and_move", args=(scrnst,))
+        screenshot = Screenshot()
+        screenshot.create_new_folder()
+        thread = threading.Thread(target=screenshot_file_asyncio, name="remember_and_move", args=(screenshot,))
         thread.start()
         
         print("[]--------------------------[]\n")
 
-def scenecollection_changing_event(event):
+def scene_collection_changing_event(event):
     global globalVariables, file_changed_sh_ref
+
     if event == obs.OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING:
         print("Scene Collection changing detected, freeing globals to avoid issues...")
         globalVariables.unload_func()
@@ -578,29 +581,29 @@ def check_if_hooked_and_update_title():
     global globalVariables
     
     try:
-        if globalVariables.get_sourceUUID() is None:
+        if globalVariables.get_source_uuid() is None:
             raise TypeError
 
     except TypeError:
         print("Source UUID is empty. Defaulting to 'Manual Recording'")
-        globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
+        globalVariables.set_game_title(globalVariables.get_default_recording_name())
         return
 
-    calldata = get_hooked(globalVariables.get_sourceUUID())
+    calldata = get_hooked(globalVariables.get_source_uuid())
     print("Checking if source is hooked to any window...")
     if calldata is not None:
-        if not gh_isHooked(calldata):
+        if not gh_is_hooked(calldata):
             obs.calldata_destroy(calldata)
-            globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
-            print("Call data was empty, using default name for uncaptured windows...")
+            globalVariables.set_game_title(globalVariables.get_default_recording_name())
+            print("Call data was empty, using default name for un-captured windows...")
             return
         print("Hooked!")
         try:
-            globalVariables.set_gameTitle(gh_title(calldata))
+            globalVariables.set_game_title(gh_title(calldata))
         except TypeError:
             print("Failed to get title, using default name - restart OBS or captured app.")
-            globalVariables.set_gameTitle(globalVariables.get_defaultRecordingName())
-        print(f"Current game title: {globalVariables.get_gameTitle()}")
+            globalVariables.set_game_title(globalVariables.get_default_recording_name())
+        print(f"Current game title: {globalVariables.get_game_title()}")
     obs.calldata_destroy(calldata)
 
 def get_hooked(uuid: str):
@@ -611,7 +614,7 @@ def get_hooked(uuid: str):
     obs.obs_source_release(source)
     return cd
 
-def gh_isHooked(calldata) -> bool:
+def gh_is_hooked(calldata) -> bool:
     return obs.calldata_bool(calldata, "hooked")
 
 def gh_title(calldata) -> str:
@@ -620,6 +623,7 @@ def gh_title(calldata) -> str:
 
 # OBS FUNCTIONS
 
+# noinspection PyUnusedLocal
 def script_load(settings):
     # Loading object of class holding global variables
     global globalVariables
@@ -632,10 +636,10 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(recording_handler)
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
     obs.obs_frontend_add_event_callback(screenshot_handler_event)
-    obs.obs_frontend_add_event_callback(scenecollection_changing_event)
+    obs.obs_frontend_add_event_callback(scene_collection_changing_event)
 
 def script_defaults(settings):
-    obs.obs_data_set_default_string(settings, "outputdir", osPath.normpath(Path.home()))
+    obs.obs_data_set_default_string(settings, "outputdir", os_path.normpath(Path.home()))
     obs.obs_data_set_default_string(settings, "extension", "mkv")
     obs.obs_data_set_default_string(settings, "ss_extension", "png")
 
@@ -647,11 +651,11 @@ def script_update(settings):
     sett = settings
     
     # Fetching the Settings
-    titleBool = obs.obs_data_get_bool(settings, "title_before_bool")
-    rcrdExt=obs.obs_data_get_string(settings, "extension")
-    scrnstExt=obs.obs_data_get_string(settings, "ss_extension")
-    outDir = osPath.normpath(obs.obs_data_get_string(settings, "outputdir"))
-    globalVariables.load_func(titleBool, rcrdExt, scrnstExt, outDir)
+    add_game_title_to_recording_name = obs.obs_data_get_bool(settings, "title_before_bool")
+    recording_extension=obs.obs_data_get_string(settings, "extension")
+    screenshot_extension=obs.obs_data_get_string(settings, "ss_extension")
+    output_directory = os_path.normpath(obs.obs_data_get_string(settings, "outputdir"))
+    globalVariables.load_func(add_game_title_to_recording_name, recording_extension, screenshot_extension, output_directory)
 
     print("(script_update) Updated the settings!\n")
 
@@ -687,7 +691,7 @@ def script_properties():
         "Recordings folder",
         obs.OBS_PATH_DIRECTORY,
         None,
-        osPath.normpath(Path.home()),
+        os_path.normpath(Path.home()),
     )
 
     # Extension of file
@@ -710,7 +714,7 @@ def script_unload():
     obs.obs_frontend_remove_event_callback(recording_handler)
     obs.obs_frontend_remove_event_callback(replay_buffer_handler)
     obs.obs_frontend_remove_event_callback(screenshot_handler_event)
-    obs.obs_frontend_remove_event_callback(scenecollection_changing_event)
+    obs.obs_frontend_remove_event_callback(scene_collection_changing_event)
     
     # Clear global variables
     globalVariables.unload_func()
