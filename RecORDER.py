@@ -31,7 +31,7 @@ class GlobalVariables:
         self.add_game_title_to_recording_name = None
         self.recording_extension = None
         self.screenshot_extension = None
-        self.time_to_wait = 0.5
+        self.time_to_wait = 0.02
         
         #[Related to RECORDING]
         self.defaultRecordingName = "Manual Recording"
@@ -297,29 +297,30 @@ file_changed_sh_ref = None
 
 # ASYNC FUNCTIONS
 
-async def remember_and_move(old, new) -> None:
+async def remember_and_move(old_path, new_path) -> None:
     """Moves the recording to new location using 'os.renames'"""
-    global globalVariables
-    ttw = globalVariables.get_time_to_wait()
+    time_to_wait = globalVariables.get_time_to_wait()
     
     new_dir = None
-    for x in range(0,3):
+    for x in range(0,4):
         try:
-            new_dir = move_file(old, new)
+            new_dir = move_file(old_path, new_path)
             exc = None
         except Exception as e:
             exc = str(e)
             
         if exc:
-            await asyncio.sleep(ttw)
-            ttw *= 2
+            print(exc)
+            await asyncio.sleep(time_to_wait)
+            time_to_wait *= 5
         else:
             break
-    
-    print(">remember_and_move<>remember_and_move<>remember_and_move<")
+
     if new_dir is None:
-        print("(Asyncio) File was not moved, because the path provided was not suitable.")
-    
+        print("(Asyncio) File was not moved.")
+        return
+
+    print(">remember_and_move<>remember_and_move<>remember_and_move<")
     print("(Asyncio) Done!")
     print(f"(Asyncio) File moved to: {new_dir}")
     print(">remember_and_move<>remember_and_move<>remember_and_move<\n")
@@ -342,8 +343,10 @@ def remove_unusable_title_characters(title: str):
 def find_latest_file(folder_path: str, file_type: str):
     path_with_mask = os_path.join(folder_path, file_type)
     files = glob(path_with_mask)
+    #print(files)
     if files:
         max_file = max(files, key=os_path.getctime)
+        #print(max_file)
         return os_path.normpath(max_file)
 
 def rec_file_asyncio(rec):
@@ -354,7 +357,7 @@ def screenshot_file_asyncio(screenshot):
 
 # SIGNAL-RELATED
 
-def file_changed_sh():
+def file_changed_sh(recreate : bool= False):
     """Signal handler function reacting to automatic file splitting."""
     global file_changed_sh_ref
     if not file_changed_sh_ref:
@@ -362,6 +365,13 @@ def file_changed_sh():
         file_changed_sh_ref = obs.obs_output_get_signal_handler(output)
         obs.signal_handler_connect(file_changed_sh_ref, "file_changed", file_changed_cb)
         obs.obs_output_release(output)
+    else:
+        obs.signal_handler_disconnect(file_changed_sh_ref, "file_changed", file_changed_cb)
+        if recreate:
+            output = obs.obs_frontend_get_recording_output()
+            file_changed_sh_ref = obs.obs_output_get_signal_handler(output)
+            obs.signal_handler_connect(file_changed_sh_ref, "file_changed", file_changed_cb)
+            obs.obs_output_release(output)
 
 
 # noinspection SpellCheckingInspection,PyUnusedLocal
@@ -372,6 +382,7 @@ def file_changed_cb(calldata):
     print("Recording automatic splitting detected!\n")
     
     global globalVariables
+    print("Looking for split file...")
     globalVariables.set_current_recording(find_latest_file(globalVariables.get_output_dir(), globalVariables.get_recording_extension_mask()))
 
     if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
@@ -445,7 +456,7 @@ def recording_handler(event):
         print("Reloading the signals!\n")
         if not globalVariables.get_source_uuid():
             hooked_sh()    # Respond to selected source hooking to a window
-        file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
+        file_changed_sh(recreate=True)  # Respond to splitting the recording (ex. automatic recording split)
 
         print("Signals reloaded!\n")
         print("Resetting the recording related values...\n")
@@ -554,12 +565,11 @@ def screenshot_handler_event(event):
         print("[]--------------------------[]\n")
 
 def scene_collection_changing_event(event):
-    global globalVariables, file_changed_sh_ref
+    global globalVariables
 
     if event == obs.OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING:
         print("Scene Collection changing detected, freeing globals to avoid issues...")
         globalVariables.unload_func()
-        file_changed_sh_ref = None
         
         if obs.obs_frontend_recording_active():
             print("Stopping recording...")
@@ -630,7 +640,7 @@ def script_load(settings):
     globalVariables = GlobalVariables()
     
     # Loading in Signals
-    file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
+    file_changed_sh(recreate=True)  # Respond to splitting the recording (ex. automatic recording split)
 
     # Loading in Frontend events
     obs.obs_frontend_add_event_callback(recording_handler)
@@ -719,8 +729,8 @@ def script_unload():
     # Clear global variables
     globalVariables.unload_func()
     
-    # Clear Settings class
-    file_changed_sh_ref = None
+    # Clear signal for automatic splitting function
+    file_changed_sh(recreate=False)
 
     # Clear cached settings and important global values
     sett = None
