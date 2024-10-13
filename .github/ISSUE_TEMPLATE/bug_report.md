@@ -7,8 +7,8 @@ assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+- [ ] I have tried to re-apply the script to avoid the issues that might happen from updating the script (ex. ghost variables)
+- [ ] My issue was not on the Issues list
 
 **To Reproduce**
 Steps to reproduce the behavior:
@@ -18,21 +18,19 @@ Steps to reproduce the behavior:
 4. See error
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+What are you expecting the script to do at this moment?
+
+**Actual behavior**
+A clear and concise description of what has happened.
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+ - OS: [e.g. Windows 11]
+ - OBS Version [e.g. 30.2.3]
+ - Other scripts you are using [e.g. advanced-fileformatter]
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
+ 
 **Additional context**
 Add any other context about the problem here.
