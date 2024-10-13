@@ -431,11 +431,12 @@ def hooked_cb(calldata):
 
 # EVENTS
 
-def start_recording_handler(event):
+def recording_handler(event):
     """Event function reacting to OBS Event of starting the recording."""
 
+    global globalVariables
+
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTED:
-        global globalVariables
         
         print("[]--------------------------[]")
         print("Recording has started...\n")
@@ -456,13 +457,9 @@ def start_recording_handler(event):
         print(f"Current game title: {globalVariables.get_gameTitle()}")
         print("[]--------------------------[]\n")
 
-def recording_stop_handler(event):
-    """Event function reacting to OBS Event of recording fully stopping."""
-    if event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+    elif event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
         print("[]--------------------------[]")
         print("Recording has stopped, moving the last file into right folder...\n")
-
-        global globalVariables
 
         if globalVariables.get_gameTitle() == globalVariables.get_defaultRecordingName():
             print("Running get_hooked procedure to get current app title...\n")
@@ -473,28 +470,28 @@ def recording_stop_handler(event):
         rec.create_new_folder()
         thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
         thread.start()
-        
+
         print("Job's done. The file was moved.")
         globalVariables.set_currentRecording(None)
         globalVariables.set_isRecording(False)
         print("[]--------------------------[]\n")
 
-def start_buffer_handler(event):
-    """Event function reacting to OBS Event of starting the replay buffer."""
+
+def replay_buffer_handler(event):
+    """Event function reacting to OBS Event of saving the replay buffer."""
+
+    global globalVariables
 
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
-        global globalVariables
         print("[]--------------------------[]")
         print("Replay buffer has started...\n")
-        
+
         if not globalVariables.get_sourceUUID():
             print("Reloading the signals!")
-            hooked_sh()    # Respond to selected source hooking to a window
+            hooked_sh()  # Respond to selected source hooking to a window
             print("Signals reloaded!\n")
-        
-        print("Reseting the recording related values...\n")
 
-        
+        print("Reseting the recording related values...\n")
 
         globalVariables.set_isReplayActive(True)
         globalVariables.set_currentRecording(None)
@@ -506,12 +503,7 @@ def start_buffer_handler(event):
         print(f"Game title set to {globalVariables.get_gameTitle()}")
         print("[]-------------------------[]\n")
 
-def replay_buffer_handler(event):
-    """Event function reacting to OBS Event of saving the replay buffer."""
-    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
-        
-        global globalVariables
-        
+    elif event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
         print("[]--------------------------[]")
         print("Saving the Replay Buffer...")
         
@@ -525,16 +517,15 @@ def replay_buffer_handler(event):
         thread.start()
         
         print("[]--------------------------[]\n")
-           
-def replay_buffer_stop_handler(event):
-    if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED:
-        global globalVariables
+
+    elif event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED:
         globalVariables.set_isReplayActive(False)
-        
+
         print("[]--------------------------[]")
         print(f"Replay active? {'Yes' if globalVariables.get_isReplayActive() else 'No'}")
         print("[]--------------------------[]\n")
-        
+           
+
 def screenshot_handler_event(event):
     """Event function reacting to OBS Event of taking the screenshot."""
     
@@ -638,11 +629,8 @@ def script_load(settings):
     file_changed_sh()  # Respond to splitting the recording (ex. automatic recording split)
 
     # Loading in Frontend events
-    obs.obs_frontend_add_event_callback(start_recording_handler)
-    obs.obs_frontend_add_event_callback(recording_stop_handler)
-    obs.obs_frontend_add_event_callback(start_buffer_handler)
+    obs.obs_frontend_add_event_callback(recording_handler)
     obs.obs_frontend_add_event_callback(replay_buffer_handler)
-    obs.obs_frontend_add_event_callback(replay_buffer_stop_handler)
     obs.obs_frontend_add_event_callback(screenshot_handler_event)
     obs.obs_frontend_add_event_callback(scenecollection_changing_event)
 
@@ -719,11 +707,8 @@ def script_unload():
     global sett
     
     # Clear events
-    obs.obs_frontend_remove_event_callback(start_recording_handler)
-    obs.obs_frontend_remove_event_callback(recording_stop_handler)
-    obs.obs_frontend_remove_event_callback(start_buffer_handler)
+    obs.obs_frontend_remove_event_callback(recording_handler)
     obs.obs_frontend_remove_event_callback(replay_buffer_handler)
-    obs.obs_frontend_remove_event_callback(replay_buffer_stop_handler)
     obs.obs_frontend_remove_event_callback(screenshot_handler_event)
     obs.obs_frontend_remove_event_callback(scenecollection_changing_event)
     
