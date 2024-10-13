@@ -660,7 +660,7 @@ def script_description():
         "<h3>OBS RecORDER </h3>"
         "<hr>"
         "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
-        "<small>Created by:</small> <b>padii</b><br><br>"
+        "<small>Created by:</small> <b>oxypatic</b><br><br>"
         ""
         "<h4>Please, make sure that your screen/game capturing source name is matching the 'sourceNames' array in the script!</h4>"
         "Fell free to edit the array in the script by pressing 'Edit script' button while RecORDER.py is selected"
