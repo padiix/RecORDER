@@ -562,9 +562,8 @@ def screenshot_handler_event(event):
             hooked_sh()  # Respond to selected source hooking to a window
             print("Signals reloaded.")
 
-        if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
-            print("Running get_hooked procedure to get current app title...")
-            check_if_hooked_and_update_title()
+        print("Running get_hooked procedure to get current app title...")
+        check_if_hooked_and_update_title()
 
         print("User took the screenshot...")
 
