@@ -68,7 +68,7 @@ class GlobalVariables:
         return f"*.{self.recording_extension}"
 
     def get_screenshot_extension_mask(self):
-        return f"*.{self.recording_extension}"
+        return f"*.{self.screenshot_extension}"
 
     def get_time_to_wait(self):
         return self.time_to_wait
@@ -93,7 +93,7 @@ class GlobalVariables:
     def get_current_recording(self):
         return self.current_recording_path
 
-    def set_current_recording(self, value: str or None):
+    def set_current_recording(self, value):
         self.current_recording_path = value
 
     def get_game_title(self):
@@ -289,11 +289,6 @@ class Screenshot:
         """Creates a new folder based on title of the captured fullscreen application"""
         if not os_path.exists(self.get_new_folder()):
             makedirs(self.get_new_folder())
-
-
-# Global variables
-
-globalVariables = GlobalVariables()
 
 # Values supporting smooth working and fewer calls
 
@@ -677,12 +672,10 @@ def script_update(settings):
     sett = settings
 
     # Fetching the Settings
-    add_game_title_to_recording_name = obs.obs_data_get_bool(settings, "title_before_bool")
-    recording_extension = obs.obs_data_get_string(settings, "extension")
-    screenshot_extension = obs.obs_data_get_string(settings, "ss_extension")
-    output_directory = os_path.normpath(obs.obs_data_get_string(settings, "outputdir"))
-    globalVariables.load_func(add_game_title_to_recording_name, recording_extension, screenshot_extension,
-                              output_directory)
+    globalVariables.load_func(obs.obs_data_get_bool(settings, "title_before_bool"), 
+                              obs.obs_data_get_string(settings, "extension"), 
+                              obs.obs_data_get_string(settings, "ss_extension"),
+                              os_path.normpath(obs.obs_data_get_string(settings, "outputdir")))
 
     print("(script_update) Updated the settings!\n")
 
