@@ -658,7 +658,7 @@ def script_update(settings):
 
 def script_description():
     desc = (
-        "<h3>OBS RecORDER </h3>"
+        "<h3> RecORDER </h3>"
         "<hr>"
         "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
         "<small>Created by:</small> <b>oxypatic</b><br><br>"
