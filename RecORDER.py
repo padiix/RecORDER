@@ -321,11 +321,8 @@ async def remember_and_move(old_path, new_path) -> None:
         print("(Asyncio) File was not moved.")
         return
 
-    print(">remember_and_move<>remember_and_move<>remember_and_move<")
     print("(Asyncio) Done!")
     print(f"(Asyncio) File moved to: {new_dir}")
-    print(">remember_and_move<>remember_and_move<>remember_and_move<\n")
-
 
 # HELPER FUNCTIONS
 
@@ -383,10 +380,10 @@ def file_changed_sh(recreate: bool = False):
 def file_changed_cb(calldata):
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
 
-    print("<>--------------------------<>")
     print("Recording automatic splitting detected!\n")
 
     global globalVariables
+    
     print("Looking for split file...")
     globalVariables.set_current_recording(
         find_latest_file(globalVariables.get_output_dir(), globalVariables.get_recording_extension_mask()))
@@ -401,11 +398,9 @@ def file_changed_cb(calldata):
     thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
     thread.start()
 
-    print("<>--------------------------<>\n")
 
 
 def hooked_sh():
-    print("<>--------------------------<>")
     global sourceNames, globalVariables
     scene_item_source = None
 
@@ -439,14 +434,12 @@ def hooked_sh():
 
 
 def hooked_cb(calldata):
-    print("<<>>--------------------------<<>>")
     global globalVariables
 
     print("Fetching data from calldata...")
 
     globalVariables.set_game_title(obs.calldata_string(calldata, "title"))
     print(f"gameTitle: {globalVariables.get_game_title()}")
-    print("<<>>--------------------------<<>>")
 
 
 # EVENTS
@@ -458,7 +451,6 @@ def recording_handler(event):
 
     if event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTED:
 
-        print("[]--------------------------[]")
         print("Recording has started...\n")
         print("Reloading the signals!\n")
         if not globalVariables.get_source_uuid():
@@ -472,13 +464,10 @@ def recording_handler(event):
         globalVariables.set_current_recording(None)
         globalVariables.set_game_title(globalVariables.get_default_recording_name())
 
-        print(">--------------------------<\n")
         print(f"Recording started: {'Yes' if globalVariables.get_is_recording() else 'No'}")
         print(f"Current game title: {globalVariables.get_game_title()}")
-        print("[]--------------------------[]\n")
 
     elif event == obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED:
-        print("[]--------------------------[]")
         print("Recording has stopped, moving the last file into right folder...\n")
 
         if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
@@ -493,7 +482,6 @@ def recording_handler(event):
         print("Job's done. The file was moved.")
         globalVariables.set_current_recording(None)
         globalVariables.set_is_recording(False)
-        print("[]--------------------------[]\n")
 
 
 def replay_buffer_handler(event):
@@ -502,7 +490,6 @@ def replay_buffer_handler(event):
     global globalVariables
 
     if event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED:
-        print("[]--------------------------[]")
         print("Replay buffer has started...\n")
 
         if not globalVariables.get_source_uuid():
@@ -516,14 +503,11 @@ def replay_buffer_handler(event):
         globalVariables.set_current_recording(None)
         globalVariables.set_game_title(globalVariables.get_default_recording_name())
 
-        print(">--------------------------<")
         print(f"Replay active? {'Yes' if globalVariables.get_is_replay_active() else 'No'}")
         print(f"CurrentRecording is {globalVariables.get_current_recording()}")
         print(f"Game title set to {globalVariables.get_game_title()}")
-        print("[]-------------------------[]\n")
 
     elif event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
-        print("[]--------------------------[]")
         print("Saving the Replay Buffer...")
 
         if globalVariables.get_game_title() == globalVariables.get_default_recording_name():
@@ -535,21 +519,15 @@ def replay_buffer_handler(event):
         thread = threading.Thread(target=rec_file_asyncio, name="remember_and_move", args=(rec,))
         thread.start()
 
-        print("[]--------------------------[]\n")
-
     elif event == obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED:
         globalVariables.set_is_replay_active(False)
-
-        print("[]--------------------------[]")
         print(f"Replay active? {'Yes' if globalVariables.get_is_replay_active() else 'No'}")
-        print("[]--------------------------[]\n")
 
 
 def screenshot_handler_event(event):
     """Event function reacting to OBS Event of taking the screenshot."""
 
     if event == obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN:
-        print("[]--------------------------[]")
         global globalVariables
 
         if not globalVariables.get_source_uuid():
@@ -566,9 +544,7 @@ def screenshot_handler_event(event):
         screenshot.create_new_folder()
         thread = threading.Thread(target=screenshot_file_asyncio, name="remember_and_move", args=(screenshot,))
         thread.start()
-
-        print("[]--------------------------[]\n")
-
+        
 
 def scene_collection_changing_event(event):
     global globalVariables
