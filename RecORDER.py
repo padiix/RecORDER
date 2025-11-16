@@ -599,7 +599,7 @@ def check_if_hooked_and_update_title():
     obs.calldata_destroy(calldata)
 
 
-def get_hooked(uuid: str):
+def get_hooked(uuid: str) -> object:
     source = obs.obs_get_source_by_uuid(uuid)
     cd = obs.calldata_create()
     ph = obs.obs_source_get_proc_handler(source)
