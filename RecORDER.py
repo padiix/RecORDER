@@ -21,8 +21,8 @@ import obspython as obs # type: ignore
 sourceNames = ["Game Capture", "Window Capture"]
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 
-if sys.version_info[0] < 3 or sys.version_info[1] < 11:
-    print("Python version < 3.11, correct behaviour is not guaranteed")
+if sys.version_info < (3, 11):
+    print("Python version < 3.11, correct behaviour is not guaranteed!")
 
 
 # CLASSES
