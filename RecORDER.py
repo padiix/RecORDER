@@ -8,7 +8,7 @@ from pathlib import Path
 from re import sub
 from shutil import move as move_file
 
-import obspython as obs
+import obspython as obs # type: ignore
 
 # Author: oxypatic! (61553947+padiix@users.noreply.github.com)
 
