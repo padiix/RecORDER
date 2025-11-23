@@ -3,7 +3,6 @@ import sys
 import threading
 from os import makedirs
 from os import path as os_path
-from pathlib import Path
 from re import sub
 from shutil import move as move_file
 
@@ -595,8 +594,7 @@ def script_load(settings):
 
 
 def script_defaults(settings):
-    obs.obs_data_set_default_string(settings, "outputdir", os_path.normpath(Path.home()))
-    obs.obs_data_set_default_string(settings, "extension", "mkv")
+    obs.obs_data_set_default_string(settings, "extension", "mp4")
     obs.obs_data_set_default_string(settings, "ss_extension", "png")
 
 
@@ -610,8 +608,7 @@ def script_update(settings):
     # Fetching the Settings
     globalVariables.load_func(obs.obs_data_get_bool(settings, "title_before_bool"), 
                               obs.obs_data_get_string(settings, "extension"), 
-                              obs.obs_data_get_string(settings, "ss_extension"),
-                              os_path.normpath(obs.obs_data_get_string(settings, "outputdir")))
+                              obs.obs_data_get_string(settings, "ss_extension"))
 
     print("(script_update) Updated the settings!\n")
 
@@ -640,16 +637,6 @@ def script_properties():
     obs.obs_property_set_long_description(
         bool_p,
         "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
-    )
-
-    # Output directory
-    obs.obs_properties_add_path(
-        props,
-        "outputdir",
-        "Recordings folder",
-        obs.OBS_PATH_DIRECTORY,
-        None,
-        os_path.normpath(Path.home()),
     )
 
     # Extension of file
