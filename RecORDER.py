@@ -36,81 +36,93 @@ class GlobalVariables:
 
     def __init__(self):
         # [PROPERTIES]
-        self.add_game_title_to_recording_name = None
-        self.time_to_wait = 0.5
+        self._add_game_title_to_recording_name = None
+        self._time_to_wait = 0.5
 
         # [Related to RECORDING]
-        self.defaultRecordingName = "Manual Recording"
-        self.isRecording = False
-        self.isReplayActive = False
-        self.last_recording_path = None
-        self.game_title = self.defaultRecordingName
-        self.source_uuid = None
+        self._default_recording_name = "Manual Recording"
+        self._is_recording = False
+        self._is_replay_active = False
+        self._last_recording_path = None
+        self._game_title = self._default_recording_name
+        self._source_uuid = None
 
     def load_func(self, add_game_title_to_recording_name: bool):
-        self.add_game_title_to_recording_name = add_game_title_to_recording_name
+        self._add_game_title_to_recording_name = add_game_title_to_recording_name
 
     # ---
 
     @property
     def add_game_title_to_recording_name(self):
-        return self.add_game_title_to_recording_name
-
+        return self._add_game_title_to_recording_name
+    
+    @add_game_title_to_recording_name.setter
+    def add_game_title_to_recording_name(self, value: bool):
+        self._add_game_title_to_recording_name = value
+    
     @property
     def time_to_wait(self):
-        return self.time_to_wait
+        return self._time_to_wait
+    
+    @time_to_wait.setter
+    def time_to_wait(self, value: float):
+        self._time_to_wait = value
 
     # ---
 
     @property
     def default_recording_name(self):
-        return self.defaultRecordingName
+        return self._default_recording_name
 
+    @default_recording_name.setter
+    def default_recording_name(self, value: str):
+        self._default_recording_name = value
+    
     @property
     def is_recording(self):
-        return self.isRecording
-
+        return self._is_recording
+    
     @is_recording.setter
     def is_recording(self, value: bool):
-        self.isRecording = value
+        self._is_recording = value
 
     @property
     def is_replay_active(self):
-        return self.isReplayActive
+        return self._is_replay_active
     
     @is_replay_active.setter
     def is_replay_active(self, value: bool):
-        self.isReplayActive = value
+        self._is_replay_active = value
 
     @property
     def last_recording(self):
-        return self.last_recording_path
+        return self._last_recording_path
     
     @last_recording.setter
     def last_recording(self, value):
-        self.last_recording_path = value
+        self._last_recording_path = value
     
     @property
     def game_title(self):
-        return self.game_title
+        return self._game_title
 
     @game_title.setter
     def game_title(self, value: str):
-        self.game_title = remove_unusable_title_characters(value)
+        self._game_title = remove_unusable_title_characters(value)
 
     @property
     def source_uuid(self):
-        return self.source_uuid
+        return self._source_uuid
 
     @source_uuid.setter
     def source_uuid(self, value: str):
-        self.source_uuid = value
+        self._source_uuid = value
 
     # ---
 
     def unload_func(self):
         for key in list(self.__dict__.keys()):
-            if not key.startswith('_'):
+            if key.startswith('_'):
                 self.__dict__[key] = None
 
 
@@ -241,7 +253,7 @@ async def remember_and_move(old_path, new_path) -> None:
         print(f"(Asyncio) File does not exist: {old_path}")
         return
     
-    time_to_wait = globalVariables.time_to_wait()
+    time_to_wait = globalVariables.time_to_wait
 
     new_dir = None
     max_attempts = 4
