@@ -519,11 +519,7 @@ def check_if_hooked_and_update_title():
     """
     global globalVariables
 
-    try:
-        if globalVariables.get_source_uuid() is None:
-            raise TypeError
-
-    except TypeError:
+    if globalVariables.get_source_uuid() is None:
         print("Source UUID is empty. Defaulting to 'Manual Recording'")
         globalVariables.set_game_title(globalVariables.get_default_recording_name())
         return
