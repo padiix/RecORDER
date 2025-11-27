@@ -10,13 +10,9 @@ import obspython as obs # type: ignore
 
 # Author: oxypatic! (61553947+padiix@users.noreply.github.com)
 
-# TODO: Implement a way for storing the UUID and Signals that react to it's deletion, etc. (Not figured out by me yet)
-# TODO: Config instead of the Classes storing the data (Need to think if it's necessary, but probably not)
-
-
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 # Table of capturing video source names
-sourceNames = ["Game Capture", "Window Capture"]
+SOURCE_NAMES = ["Game Capture", "Window Capture"]
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 
 if sys.version_info < (3, 11):
@@ -61,7 +57,7 @@ class GlobalVariables:
         self._add_game_title_to_recording_name = value
     
     @property
-    def time_to_wait(self):
+    def time_to_wait(self) -> float:
         return self._time_to_wait
     
     @time_to_wait.setter
@@ -71,7 +67,7 @@ class GlobalVariables:
     # ---
 
     @property
-    def default_recording_name(self):
+    def default_recording_name(self) -> str:
         return self._default_recording_name
 
     @default_recording_name.setter
@@ -79,7 +75,7 @@ class GlobalVariables:
         self._default_recording_name = value
     
     @property
-    def is_recording(self):
+    def is_recording(self) -> bool:
         return self._is_recording
     
     @is_recording.setter
@@ -87,7 +83,7 @@ class GlobalVariables:
         self._is_recording = value
 
     @property
-    def is_replay_active(self):
+    def is_replay_active(self) -> bool:
         return self._is_replay_active
     
     @is_replay_active.setter
@@ -95,15 +91,15 @@ class GlobalVariables:
         self._is_replay_active = value
 
     @property
-    def last_recording(self):
+    def last_recording(self) -> str | None:
         return self._last_recording_path
     
     @last_recording.setter
-    def last_recording(self, value):
+    def last_recording(self, value: str | None):
         self._last_recording_path = value
     
     @property
-    def game_title(self):
+    def game_title(self) -> str:
         return self._game_title
 
     @game_title.setter
@@ -111,11 +107,11 @@ class GlobalVariables:
         self._game_title = remove_unusable_title_characters(value)
 
     @property
-    def source_uuid(self):
+    def source_uuid(self) -> str | None:
         return self._source_uuid
 
     @source_uuid.setter
-    def source_uuid(self, value: str):
+    def source_uuid(self, value: str | None):
         self._source_uuid = value
 
     # ---
@@ -246,7 +242,7 @@ class Screenshot(MediaFile):
 
 # ASYNC FUNCTIONS
 
-async def remember_and_move(old_path, new_path) -> None:
+async def remember_and_move(old_path: str, new_path: str) -> None:
     """Moves the recording to new location using shutil.move() with retries."""
     
     if not os_path.exists(old_path):
@@ -279,7 +275,7 @@ async def remember_and_move(old_path, new_path) -> None:
 
 # HELPER FUNCTIONS
 
-def remove_unusable_title_characters(title: str):
+def remove_unusable_title_characters(title: str) -> str:
     # Remove non-alphanumeric characters (ex. ':')
     title = sub(r"[^A-Za-z0-9 ]+", "", title)
 
@@ -292,13 +288,14 @@ def remove_unusable_title_characters(title: str):
     return title
 
 
-def move_media_file_asyncio(media_file: MediaFile):
+def move_media_file_asyncio(media_file: MediaFile) -> None:
+    """Asynchronously move media file to organized folder."""
     asyncio.run(remember_and_move(media_file.get_old_path(), media_file.get_new_path()))
     
     
 # SIGNAL-RELATED
 
-def file_changed_sh(recreate: bool = False):
+def file_changed_sh(recreate: bool = False) -> None:
     """Signal handler function reacting to automatic file splitting."""
     global file_changed_sh_ref
     if not file_changed_sh_ref:
@@ -319,8 +316,7 @@ def file_changed_sh(recreate: bool = False):
                 obs.obs_output_release(output)
 
 
-# noinspection SpellCheckingInspection,PyUnusedLocal
-def file_changed_cb(calldata):
+def file_changed_cb(calldata: object) -> None:
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
 
     print("Recording automatic splitting detected!\n")
@@ -347,8 +343,9 @@ def file_changed_cb(calldata):
         thread.start()
 
 
-def hooked_sh():
-    global sourceNames, globalVariables
+def hooked_sh() -> None:
+    global SOURCE_NAMES
+    global globalVariables
     scene_item_source = None
 
     print("Checking available sources for a match with source table...")
@@ -361,7 +358,7 @@ def hooked_sh():
     for item in scene_items:
         scene_item_source = obs.obs_sceneitem_get_source(item)
         name = obs.obs_source_get_name(scene_item_source)
-        for source in sourceNames:
+        for source in SOURCE_NAMES:
             if name == source:
                 globalVariables.source_uuid = obs.obs_source_get_uuid(scene_item_source)
                 print("Match found!")
@@ -387,7 +384,7 @@ def hooked_sh():
         print("Warning: No matching source item found.")
     
     
-def hooked_cb(calldata):
+def hooked_cb(calldata: object) -> None:
     global globalVariables
 
     print("Fetching data from calldata...")
@@ -399,7 +396,7 @@ def hooked_cb(calldata):
 # EVENTS
 
 
-def _handle_recording_start():
+def _handle_recording_start() -> None:
     global globalVariables
     
     print("Recording has started...\n")
@@ -419,7 +416,7 @@ def _handle_recording_start():
     print(f"Current game title: {globalVariables.game_title}")
 
 
-def _handle_recording_stop():
+def _handle_recording_stop() -> None:
     global globalVariables
     
     print("Recording has stopped, moving the last file into right folder...\n")
@@ -438,7 +435,7 @@ def _handle_recording_stop():
     globalVariables.is_recording = False
     
     
-def _handle_replay_buffer_start():
+def _handle_replay_buffer_start() -> None:
     global globalVariables
     
     print("Replay buffer has started...\n")
@@ -459,7 +456,7 @@ def _handle_replay_buffer_start():
     print(f"Game title set to {globalVariables.game_title}")
 
 
-def _handle_replay_buffer_save():
+def _handle_replay_buffer_save() -> None:
     global globalVariables
     
     print("Saving the Replay Buffer...")
@@ -474,13 +471,13 @@ def _handle_replay_buffer_save():
     thread.start()
 
 
-def _handle_replay_buffer_stop():
+def _handle_replay_buffer_stop() -> None:
     globalVariables.is_replay_active = False
     globalVariables.last_recording = None
     print(f"Replay active? {'Yes' if globalVariables.is_replay_active else 'No'}")
 
 
-def _handle_screenshot_taken():
+def _handle_screenshot_taken() -> None:
     global globalVariables
 
     if not globalVariables.source_uuid:
@@ -499,7 +496,7 @@ def _handle_screenshot_taken():
     thread.start()
 
     
-def _handle_scene_collection_change():
+def _handle_scene_collection_change() -> None:
     global globalVariables
     
     print("Scene Collection changing detected, freeing globals to avoid issues...")
@@ -513,6 +510,7 @@ def _handle_scene_collection_change():
         print("Stopping replay...")
         obs.obs_frontend_replay_buffer_stop()
 
+
 EVENT_HANDLERS = {
     obs.OBS_FRONTEND_EVENT_RECORDING_STARTED: _handle_recording_start,
     obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED: _handle_recording_stop,
@@ -523,7 +521,8 @@ EVENT_HANDLERS = {
     obs.OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING: _handle_scene_collection_change,
 }
     
-def global_event_handler(event):
+    
+def global_event_handler(event: int) -> None:
     """Single dispatcher for all OBS frontend events"""
 
     if handler := EVENT_HANDLERS.get(event):
@@ -572,11 +571,11 @@ def get_hooked(uuid: str) -> object:
     return cd
 
 
-def gh_is_hooked(calldata) -> bool:
+def gh_is_hooked(calldata: object) -> bool:
     return obs.calldata_bool(calldata, "hooked")
 
 
-def gh_title(calldata) -> str:
+def gh_title(calldata: object) -> str:
     return obs.calldata_string(calldata, "title")
 
 
@@ -619,7 +618,7 @@ def script_update(settings):
 
 def script_description():
     desc = (
-        "<h3> RecORDER </h3>"
+        "<h3> RecORDER 2.1 </h3>"
         "<hr>"
         "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
         "<small>Created by:</small> <b>oxypatic</b><br><br>"
@@ -648,7 +647,8 @@ def script_properties():
 
 def script_unload():
     # Fetching global variables
-    global globalVariables, file_changed_sh_ref
+    global globalVariables
+    global file_changed_sh_ref
     global sett
 
     # Clear events
