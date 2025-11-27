@@ -37,8 +37,6 @@ class GlobalVariables:
     def __init__(self):
         # [PROPERTIES]
         self.add_game_title_to_recording_name = None
-        self.recording_extension = None
-        self.screenshot_extension = None
         self.time_to_wait = 0.5
 
         # [Related to RECORDING]
@@ -47,32 +45,15 @@ class GlobalVariables:
         self.isReplayActive = False
         self.last_recording_path = None
         self.game_title = self.defaultRecordingName
-        self.output_directory = None
         self.source_uuid = None
 
-    def load_func(self, add_game_title_to_recording_name: bool, recording_extension: str, screenshot_extension: str,
-                  output_directory: str):
+    def load_func(self, add_game_title_to_recording_name: bool):
         self.add_game_title_to_recording_name = add_game_title_to_recording_name
-        self.recording_extension = recording_extension
-        self.screenshot_extension = screenshot_extension
-        self.output_directory = output_directory
 
     # ---
 
     def get_add_game_title_to_recording_name(self):
         return self.add_game_title_to_recording_name
-
-    def get_recording_extension(self):
-        return self.recording_extension
-
-    def get_screenshot_extension(self):
-        return self.screenshot_extension
-
-    def get_recording_extension_mask(self):
-        return f"*.{self.recording_extension}"
-
-    def get_screenshot_extension_mask(self):
-        return f"*.{self.screenshot_extension}"
 
     def get_time_to_wait(self):
         return self.time_to_wait
