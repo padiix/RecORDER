@@ -118,16 +118,9 @@ class GlobalVariables:
     # ---
 
     def unload_func(self):
-        self.add_game_title_to_recording_name = None
-        self.recording_extension = None
-        self.screenshot_extension = None
-        self.defaultRecordingName = None
-        self.source_uuid = None
-        self.isRecording = None
-        self.isReplayActive = None
-        self.last_recording_path = None
-        self.game_title = None
-        self.output_directory = None
+        for key in list(self.__dict__.keys()):
+            if not key.startswith('_'):
+                self.__dict__[key] = None
 
 
 class MediaFile:
