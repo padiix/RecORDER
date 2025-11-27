@@ -587,8 +587,7 @@ def script_load(settings):
 
 
 def script_defaults(settings):
-    obs.obs_data_set_default_string(settings, "extension", "mp4")
-    obs.obs_data_set_default_string(settings, "ss_extension", "png")
+    pass
 
 
 def script_update(settings):
@@ -599,9 +598,7 @@ def script_update(settings):
     sett = settings
 
     # Fetching the Settings
-    globalVariables.load_func(obs.obs_data_get_bool(settings, "title_before_bool"), 
-                              obs.obs_data_get_string(settings, "extension"), 
-                              obs.obs_data_get_string(settings, "ss_extension"))
+    globalVariables.load_func(obs.obs_data_get_bool(settings, "title_before_bool"))
 
     print("(script_update) Updated the settings!\n")
 
@@ -630,15 +627,6 @@ def script_properties():
     obs.obs_property_set_long_description(
         bool_p,
         "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
-    )
-
-    # Extension of file
-    obs.obs_properties_add_text(
-        props, "extension", "Recording extension", obs.OBS_TEXT_DEFAULT
-    )
-
-    obs.obs_properties_add_text(
-        props, "ss_extension", "Screenshot extension", obs.OBS_TEXT_DEFAULT
     )
 
     return props
