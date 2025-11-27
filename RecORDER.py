@@ -245,6 +245,11 @@ class Screenshot(MediaFile):
 
 async def remember_and_move(old_path, new_path) -> None:
     """Moves the recording to new location using shutil.move() with retries."""
+    
+    if not os_path.exists(old_path):
+        print(f"(Asyncio) File does not exist: {old_path}")
+        return
+    
     time_to_wait = globalVariables.get_time_to_wait()
 
     new_dir = None
