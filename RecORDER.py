@@ -18,7 +18,7 @@ SOURCE_NAMES = ["Game Capture", "Window Capture"]
 if sys.version_info < (3, 11):
     print("Python version < 3.11, correct behaviour is not guaranteed!")
 
-
+VERSION = "2.1"
 # Values supporting smooth working and fewer calls
 
 sett = None
@@ -43,7 +43,7 @@ class GlobalVariables:
         self._game_title = self._default_recording_name
         self._source_uuid = None
 
-    def load_func(self, add_game_title_to_recording_name: bool):
+    def apply_config(self, add_game_title_to_recording_name: bool):
         self._add_game_title_to_recording_name = add_game_title_to_recording_name
 
     # ---
@@ -354,6 +354,7 @@ def hooked_sh() -> None:
     scene = obs.obs_scene_from_source(current_scene_as_source)
 
     # noinspection PyArgumentList
+    #TODO: Can I make this work without SOURCE_NAMES?
     scene_items = obs.obs_scene_enum_items(scene)
     for item in scene_items:
         scene_item_source = obs.obs_sceneitem_get_source(item)
@@ -368,7 +369,7 @@ def hooked_sh() -> None:
     obs.obs_source_release(current_scene_as_source)
 
     if not globalVariables.source_uuid:
-        print("Nothing was found... Did you name your source in different way than in the 'sourceNames' array?")
+        print("Nothing was found... Are you sure your source is in the 'SOURCE_NAMES' array?")
         return
 
     # Only proceed if we found a valid source
@@ -599,10 +600,6 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(global_event_handler)
 
 
-def script_defaults(settings):
-    pass
-
-
 def script_update(settings):
     global globalVariables
 
@@ -611,38 +608,9 @@ def script_update(settings):
     sett = settings
 
     # Fetching the Settings
-    globalVariables.load_func(obs.obs_data_get_bool(settings, "title_before_bool"))
+    globalVariables.apply_config(obs.obs_data_get_bool(settings, "title_before_bool"))
 
     print("(script_update) Updated the settings!\n")
-
-
-def script_description():
-    desc = (
-        "<h3> RecORDER 2.1 </h3>"
-        "<hr>"
-        "Renames and organizes recordings/replays into subfolders similar to NVIDIA ShadowPlay (<i>NVIDIA GeForce Experience</i>).<br><br>"
-        "<small>Created by:</small> <b>oxypatic</b><br><br>"
-        ""
-        "<h4>Please, make sure that your screen/game capturing source name is matching the 'sourceNames' array in the script!</h4>"
-        "Fell free to edit the array in the script by pressing 'Edit script' button while RecORDER.py is selected"
-        "<h4>Settings:</h4>"
-    )
-    return desc
-
-
-def script_properties():
-    props = obs.obs_properties_create()
-
-    # Title checkmark
-    bool_p = obs.obs_properties_add_bool(
-        props, "title_before_bool", "Add name of the game as a recording prefix"
-    )
-    obs.obs_property_set_long_description(
-        bool_p,
-        "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
-    )
-
-    return props
 
 
 def script_unload():
@@ -662,3 +630,42 @@ def script_unload():
 
     # Clear cached settings and important global values
     sett = None
+    
+    
+def script_properties():
+    props = obs.obs_properties_create()
+
+    # Title checkmark
+    bool_p = obs.obs_properties_add_bool(
+        props, "title_before_bool", "Add name of the game as a recording prefix"
+    )
+    obs.obs_property_set_long_description(
+        bool_p,
+        "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
+    )
+
+    return props
+
+
+def script_description():
+    return f"""
+        <div style="font-size: 40pt; text-align: center;"> RecORDER <i>{VERSION}</i> </div>
+        <hr>
+        <div style="font-size: 12pt; text-align: left;">
+        Rename and organize media into subfolders!<br>
+        <i>Similar to ShadowPlay (GeForce Experience</i>).
+        </div>
+        <div style="font-size: 12pt; text-align: left; margin-top: 20px; margin-bottom: 20px;">
+        Created and maintained by: oxypatic
+        </div>
+        
+        <div style="font-weight: bold; text-decoration: underline; font-size: 12pt; color: red;">
+        Important:
+        </div>
+        <div style="font-size: 11pt; color: red;">
+        Make sure your <b>Game Capture/Window Capture</b> source name is inside <b>'SOURCE_NAMES'</b>!
+        </div>
+        <div style="font-weight: bold; font-size: 12pt; margin-top: 25px;">
+        Settings:
+        </div>
+    """
