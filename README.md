@@ -3,7 +3,7 @@
 
 <div align="right">
    <picture> 
-      <img src="https://img.shields.io/badge/version-1.6-11">
+      <img src="https://img.shields.io/badge/version-2.1-11">
    </picture>
    <picture> 
       <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff">
@@ -65,19 +65,15 @@ First things first!
    > - "Add name of the game as a recording prefix" checkbox - if you want your recordings to look like this:
    >     - Voices of The Void - %Filename Formatting%
    >     - Filename Formatting is configured in `Settings > Advanced > Recording`
-   > - "Recordings folder"
-   >     - Select a directory where OBS saves your recordings to, it will allow the script to organize them for you ;)
-   > - "Recording extension"
-   >     - Write here extension of your **recordings** (the "mkv" is set default to showcase how to write the extension and because it's recommended one for now)
-   >     - [Useful discussion to understand why use MKV instead of other containers for now](https://www.reddit.com/r/letsplay/comments/7xtssw/mkv_vs_mp4_container_in_obs_deep_discussion/)  
-   > - "Screenshot extension"
-   >     - Write here extension of your **screenshots** saved by OBS as (the "png" is set default to showcase how to write the extension, a default one for non-HDR screenshots) 
+
 
 
 ## FAQ
 
 <details>
-   <summary>RecORDER doesn't see my Game Capture/Window Capture source and shows "Nothing was found... Did you name your source in different way than in the 'sourceNames' array?" in script log</summary>
+   <summary>
+   RecORDER doesn't see my Game Capture/Window Capture source and shows "Nothing was found... Did you name your source in different way than in the 'sourceNames' array?" in script log
+   </summary>
 
    It's probably happening because you **changed the Game Capture/Window Capture source default name to something else**. <br> 
    The message shows only when the script checked the names in **"sourceNames"** and found no match with the sources in your scene.<br>
@@ -85,7 +81,9 @@ First things first!
 </details>
    
 <details>
-   <summary>How should I edit the "sourceNames" when I have no idea how should I put it in the script?</summary>
+   <summary>
+   How should I edit the "sourceNames" when I have no idea how should I put it in the script?
+   </summary>
 
    No worries about that, it's not really hard to do because you have the example already in the script and here below  <br><br>
    EXAMPLE:  <br><br>
