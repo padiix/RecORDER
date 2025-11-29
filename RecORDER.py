@@ -582,7 +582,7 @@ def gh_title(calldata: object) -> str:
 
 # OBS FUNCTIONS
 
-# noinspection PyUnusedLocal
+
 def script_load(settings):
     # Loading object of class holding global variables
     global globalVariables
