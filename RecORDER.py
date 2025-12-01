@@ -673,10 +673,6 @@ def script_update(settings):
     global globalVariables
     global EVENT_HANDLERS
 
-    # Loading in settings
-    global sett
-    sett = settings
-
     # Fetching the Settings
     globalVariables.apply_config(obs.obs_data_get_bool(settings, "title_before_bool"), 
                                  obs.obs_data_get_string(settings, "default_folder_name_text"))
@@ -691,7 +687,6 @@ def script_unload():
     # Fetching global variables
     global globalVariables
     global file_changed_sh_ref
-    global sett
 
     # Clear events
     obs.obs_frontend_remove_event_callback(global_event_handler)
@@ -701,9 +696,6 @@ def script_unload():
 
     # Clear signal for automatic splitting function
     file_changed_sh(recreate=False)
-
-    # Clear cached settings and important global values
-    sett = None
     
     
 def script_properties():
