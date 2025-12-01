@@ -2,6 +2,9 @@ import asyncio
 import sys
 import threading
 import datetime as dt
+import traceback
+import json
+from urllib.request import urlopen
 from os import makedirs
 from os import path as os_path
 from re import sub
@@ -11,27 +14,68 @@ import obspython as obs # type: ignore
 
 # Author: oxypatic! (61553947+padiix@users.noreply.github.com)
 
-# >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 # Table of capturing video source names
+# >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 SOURCE_NAMES = ["Game Capture", "Window Capture"]
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
+
+
+class CONST:
+    VERSION = "2.0"
+    PYTHON_VERSION = sys.version_info
+
+
+# Version check
+
+if CONST.PYTHON_VERSION < (3, 11):
+    print("Python version < 3.11, correct behaviour is not guaranteed!")
+
+
+# Values supporting smooth working and fewer calls
+
+file_changed_sh_ref = None
+
 
 # Utility functions
 
 def log(message):
     print(f"[{dt.datetime.now().isoformat(sep=' ', timespec='seconds')}] {message}")
     
+    
+def get_latest_release_tag() -> dict | None:
+    url = "https://api.github.com/repos/padiix/RecORDER/releases/latest"
 
-if sys.version_info < (3, 11):
-    log("Python version < 3.11, correct behaviour is not guaranteed!")
+    try:
+        with urlopen(url, timeout=2) as response:
+            if response.status == 200:
+                data = json.load(response)
+                return data.get('tag_name')
+    except Exception:
+        log("Failed to check updates.")
+        log(traceback.format_exc(1))
+    return None
 
-VERSION = "2.1"
 
-# Values supporting smooth working and fewer calls
+def check_updates(current_version: str):
+    latest_version = get_latest_release_tag()
+    if latest_version and f'{current_version}' != latest_version:
+        return True
+    return False
 
-sett = None
-file_changed_sh_ref = None
-
+def check_updates_callback(props, prop, *args, **kwargs):
+    version_check_prop = obs.obs_properties_get(props, "version_info")
+    
+    if (obs.obs_property_visible(version_check_prop)):
+        return True
+    
+    if check_updates(CONST.VERSION):
+        obs.obs_property_set_visible(version_check_prop, True)
+        obs.obs_property_set_description(version_check_prop, f"Update available: {get_latest_release_tag()}.\nHead to GitHub for latest version!")
+    else:
+        obs.obs_property_set_visible(version_check_prop, True)
+        obs.obs_property_set_description(version_check_prop, "You have the latest version!")
+        
+    return True
 
 # CLASSES
 
@@ -597,6 +641,10 @@ def gh_title(calldata: object) -> str:
 
 # OBS FUNCTIONS
 
+def check_updates_press():
+    print("Checking for updates...")
+
+
 def script_load(settings):
     # Loading object of class holding global variables
     global globalVariables
@@ -690,14 +738,30 @@ def script_properties():
         "Check the box, if you want to have title of hooked application appended as a prefix to the recording, else uncheck"
     )
 
+    # Check for updates button
+    check_updates = obs.obs_properties_add_button(
+        props,
+        "check_updates_button",
+        "Check for updates",
+        check_updates_press
+    )
+    obs.obs_property_set_modified_callback(check_updates, check_updates_callback)
     
+    update_text = obs.obs_properties_add_text(
+        props, 
+        "version_info",
+        "", 
+        obs.OBS_TEXT_INFO
+    )
+    
+    obs.obs_property_set_visible(update_text, False)
     
     return props
 
 
 def script_description():
     return f"""
-        <div style="font-size: 40pt; text-align: center;"> RecORDER <i>{VERSION}</i> </div>
+        <div style="font-size: 40pt; text-align: center;"> RecORDER <i>{CONST.VERSION}</i> </div>
         <hr>
         <div style="font-size: 12pt; text-align: left;">
         Rename and organize media into subfolders!<br>
