@@ -21,7 +21,7 @@ SOURCE_NAMES = ["Game Capture", "Window Capture"]
 
 
 class CONST:
-    VERSION = "2.0"
+    VERSION = "2.1"
     PYTHON_VERSION = sys.version_info
 
 
