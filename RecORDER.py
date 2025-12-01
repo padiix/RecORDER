@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import threading
+import datetime as dt
 from os import makedirs
 from os import path as os_path
 from re import sub
@@ -15,8 +16,14 @@ import obspython as obs # type: ignore
 SOURCE_NAMES = ["Game Capture", "Window Capture"]
 # >>> ONLY PLACE WHERE MODIFICATIONS ARE SAFE FOR YOU TO DO! <<<
 
+# Utility functions
+
+def log(message):
+    print(f"[{dt.datetime.now().isoformat(sep=' ', timespec='seconds')}] {message}")
+    
+
 if sys.version_info < (3, 11):
-    print("Python version < 3.11, correct behaviour is not guaranteed!")
+    log("Python version < 3.11, correct behaviour is not guaranteed!")
 
 VERSION = "2.1"
 # Values supporting smooth working and fewer calls
@@ -246,7 +253,7 @@ async def remember_and_move(old_path: str, new_path: str) -> None:
     """Moves the recording to new location using shutil.move() with retries."""
     
     if not os_path.exists(old_path):
-        print(f"(Asyncio) File does not exist: {old_path}")
+        log(f"(Asyncio) File does not exist: {old_path}")
         return
     
     time_to_wait = globalVariables.time_to_wait
@@ -260,18 +267,18 @@ async def remember_and_move(old_path: str, new_path: str) -> None:
             break  # Success, exit retry loop
         except Exception as e:
             if attempt < 3:  # Don't print on last attempt (will print final error below)
-                print(f"Move attempt {attempt + 1} failed: {e}")
+                log(f"Move attempt {attempt + 1} failed: {e}")
                 await asyncio.sleep(time_to_wait)
                 time_to_wait *= enlarge_timeout_value
             else:
-                print(f"(Asyncio) File move failed after {attempt + 1} attempts: {e}")
+                log(f"(Asyncio) File move failed after {attempt + 1} attempts: {e}")
 
     if new_dir is None:
-        print("(Asyncio) File was not moved.")
+        log("(Asyncio) File was not moved.")
         return
 
-    print("(Asyncio) Done!")
-    print(f"(Asyncio) File moved to: {new_dir}")
+    log("(Asyncio) Done!")
+    log(f"(Asyncio) File moved to: {new_dir}")
 
 # HELPER FUNCTIONS
 
@@ -319,11 +326,11 @@ def file_changed_sh(recreate: bool = False) -> None:
 def file_changed_cb(calldata: object) -> None:
     """Callback function reacting to the file_changed_sh signal handler function being triggered."""
 
-    print("Recording automatic splitting detected!\n")
+    log("Recording automatic splitting detected!\n")
 
     global globalVariables
     
-    print("Looking for split file...")
+    log("Looking for split file...")
     old_file = globalVariables.last_recording
     new_file = obs.obs_frontend_get_last_recording()
     
@@ -331,10 +338,10 @@ def file_changed_cb(calldata: object) -> None:
     globalVariables.last_recording = new_file
 
     if old_file and old_file != new_file:
-        print(f"Moving old recording: {old_file}")
-        print(f"New recording detected: {new_file}")
+        log(f"Moving old recording: {old_file}")
+        log(f"New recording detected: {new_file}")
         if globalVariables.game_title == globalVariables.default_recording_name:
-            print("Running get_hooked procedure to get current app title...\n")
+            log("Running get_hooked procedure to get current app title...\n")
             check_if_hooked_and_update_title()
 
         rec = Recording(custom_path=old_file)
@@ -348,7 +355,7 @@ def hooked_sh() -> None:
     global globalVariables
     scene_item_source = None
 
-    print("Checking available sources for a match with source table...")
+    log("Checking available sources for a match with source table...")
 
     current_scene_as_source = obs.obs_frontend_get_current_scene()
     scene = obs.obs_scene_from_source(current_scene_as_source)
@@ -362,36 +369,36 @@ def hooked_sh() -> None:
         for source in SOURCE_NAMES:
             if name == source:
                 globalVariables.source_uuid = obs.obs_source_get_uuid(scene_item_source)
-                print("Match found!")
+                log("Match found!")
                 break
 
     obs.sceneitem_list_release(scene_items)
     obs.obs_source_release(current_scene_as_source)
 
     if not globalVariables.source_uuid:
-        print("Nothing was found... Are you sure your source is in the 'SOURCE_NAMES' array?")
+        log("Nothing was found... Are you sure your source is in the 'SOURCE_NAMES' array?")
         return
 
     # Only proceed if we found a valid source
     if scene_item_source is not None:
         try:
-            # print("Fetching the signal handler from the matching source...")
+            # log("Fetching the signal handler from the matching source...")
             source_sh_ref = obs.obs_source_get_signal_handler(scene_item_source)
-            # print("Connecting the source signal handler to 'hooked' signal...")
+            # log("Connecting the source signal handler to 'hooked' signal...")
             obs.signal_handler_connect(source_sh_ref, "hooked", hooked_cb)
         except Exception as e:
-            print(f"Error connecting hooked signal: {e}")
+            log(f"Error connecting hooked signal: {e}")
     else:
-        print("Warning: No matching source item found.")
+        log("Warning: No matching source item found.")
     
     
 def hooked_cb(calldata: object) -> None:
     global globalVariables
 
-    print("Fetching data from calldata...")
+    log("Fetching data from calldata...")
 
     globalVariables.game_title = obs.calldata_string(calldata, "title")
-    print(f"gameTitle: {globalVariables.game_title}")
+    log(f"gameTitle: {globalVariables.game_title}")
 
 
 # EVENTS
@@ -399,30 +406,30 @@ def hooked_cb(calldata: object) -> None:
 def _handle_recording_start() -> None:
     global globalVariables
     
-    print("Recording has started...\n")
-    print("Reloading the signals!\n")
+    log("Recording has started...\n")
+    log("Reloading the signals!\n")
     if not globalVariables.source_uuid:
         hooked_sh()  # Respond to selected source hooking to a window    
     globalVariables.last_recording = obs.obs_frontend_get_last_recording()
     
     file_changed_sh(recreate=True)  # Respond to splitting the recording (ex. automatic recording split)
-    print("Signals reloaded!\n")
-    print("Resetting the recording related values...\n")
+    log("Signals reloaded!\n")
+    log("Resetting the recording related values...\n")
 
     globalVariables.is_recording = True
     globalVariables.game_title = globalVariables.default_recording_name
 
-    print(f"Recording started: {'Yes' if globalVariables.is_recording else 'No'}")
-    print(f"Current game title: {globalVariables.game_title}")
+    log(f"Recording started: {'Yes' if globalVariables.is_recording else 'No'}")
+    log(f"Current game title: {globalVariables.game_title}")
 
 
 def _handle_recording_stop() -> None:
     global globalVariables
     
-    print("Recording has stopped, moving the last file into right folder...\n")
+    log("Recording has stopped, moving the last file into right folder...\n")
 
     if globalVariables.game_title == globalVariables.default_recording_name:
-        print("Running get_hooked procedure to get current app title...\n")
+        log("Running get_hooked procedure to get current app title...\n")
         check_if_hooked_and_update_title()
 
     rec = Recording()
@@ -430,7 +437,7 @@ def _handle_recording_stop() -> None:
     thread = threading.Thread(target=move_media_file_asyncio, args=(rec,), daemon=True)
     thread.start()
 
-    print("Job's done. The file was moved.")
+    log("Job's done. The file was moved.")
     globalVariables.last_recording = None
     globalVariables.is_recording = False
     
@@ -438,31 +445,31 @@ def _handle_recording_stop() -> None:
 def _handle_replay_buffer_start() -> None:
     global globalVariables
     
-    print("Replay buffer has started...\n")
+    log("Replay buffer has started...\n")
 
     if not globalVariables.source_uuid:
-        print("Reloading the signals!")
+        log("Reloading the signals!")
         hooked_sh()  # Respond to selected source hooking to a window
-        print("Signals reloaded!\n")
+        log("Signals reloaded!\n")
 
-    print("Resetting the recording related values...\n")
+    log("Resetting the recording related values...\n")
 
     globalVariables.is_replay_active = True
     globalVariables.last_recording = obs.obs_frontend_get_last_recording()
     globalVariables.game_title = globalVariables.default_recording_name
 
-    print(f"Replay active? {'Yes' if globalVariables.is_replay_active else 'No'}")
-    print(f"CurrentRecording is {globalVariables.last_recording}")
-    print(f"Game title set to {globalVariables.game_title}")
+    log(f"Replay active? {'Yes' if globalVariables.is_replay_active else 'No'}")
+    log(f"CurrentRecording is {globalVariables.last_recording}")
+    log(f"Game title set to {globalVariables.game_title}")
 
 
 def _handle_replay_buffer_save() -> None:
     global globalVariables
     
-    print("Saving the Replay Buffer...")
+    log("Saving the Replay Buffer...")
 
     if globalVariables.game_title == globalVariables.default_recording_name:
-        print("Running get_hooked procedure to get current app title...")
+        log("Running get_hooked procedure to get current app title...")
         check_if_hooked_and_update_title()
 
     rec = Recording(is_replay=globalVariables.is_replay_active)
@@ -474,21 +481,21 @@ def _handle_replay_buffer_save() -> None:
 def _handle_replay_buffer_stop() -> None:
     globalVariables.is_replay_active = False
     globalVariables.last_recording = None
-    print(f"Replay active? {'Yes' if globalVariables.is_replay_active else 'No'}")
+    log(f"Replay active? {'Yes' if globalVariables.is_replay_active else 'No'}")
 
 
 def _handle_screenshot_taken() -> None:
     global globalVariables
 
     if not globalVariables.source_uuid:
-        print("Reloading the signals...")
+        log("Reloading the signals...")
         hooked_sh()  # Respond to selected source hooking to a window
-        print("Signals reloaded.")
+        log("Signals reloaded.")
 
-    print("Running get_hooked procedure to get current app title...")
+    log("Running get_hooked procedure to get current app title...")
     check_if_hooked_and_update_title()
 
-    print("User took the screenshot...")
+    log("User took the screenshot...")
 
     screenshot = Screenshot()
     screenshot.create_new_folder()
@@ -499,15 +506,15 @@ def _handle_screenshot_taken() -> None:
 def _handle_scene_collection_change() -> None:
     global globalVariables
     
-    print("Scene Collection changing detected, freeing globals to avoid issues...")
+    log("Scene Collection changing detected, freeing globals to avoid issues...")
     globalVariables.unload_func()
 
     if obs.obs_frontend_recording_active():
-        print("Stopping recording...")
+        log("Stopping recording...")
         obs.obs_frontend_recording_stop()
 
     if obs.obs_frontend_replay_buffer_active():
-        print("Stopping replay...")
+        log("Stopping replay...")
         obs.obs_frontend_replay_buffer_stop()
 
 
@@ -549,25 +556,25 @@ def check_if_hooked_and_update_title():
     global globalVariables
 
     if globalVariables.source_uuid is None:
-        print("Source UUID is empty. Defaulting to 'Manual Recording'")
+        log("Source UUID is empty. Defaulting to 'Manual Recording'")
         globalVariables.game_title = globalVariables.default_recording_name
         return
 
     calldata = get_hooked(globalVariables.source_uuid)
-    print("Checking if source is hooked to any window...")
+    log("Checking if source is hooked to any window...")
     if calldata is not None:
         if not gh_is_hooked(calldata):
             obs.calldata_destroy(calldata)
             globalVariables.game_title = globalVariables.default_recording_name
-            print("Call data was empty, using default name for un-captured windows...")
+            log("Call data was empty, using default name for un-captured windows...")
             return
-        print("Hooked!")
+        log("Hooked!")
         try:
             globalVariables.game_title = gh_title(calldata)
         except TypeError:
-            print("Failed to get title, using default name - restart OBS or captured app.")
+            log("Failed to get title, using default name - restart OBS or captured app.")
             globalVariables.game_title = globalVariables.default_recording_name
-        print(f"Current game title: {globalVariables.game_title}")
+        log(f"Current game title: {globalVariables.game_title}")
 
 
 
@@ -597,7 +604,7 @@ def script_load(settings):
 
     # Validate globalVariables is initialized
     if globalVariables is None:
-        print("Error: globalVariables not initialized.")
+        log("Error: globalVariables not initialized.")
         return
 
     # Loading in Signals
@@ -625,10 +632,8 @@ def script_update(settings):
 
     EVENT_HANDLERS = _build_event_handlers(enable_replay_organization = obs.obs_data_get_bool(settings, "organize_replay_bool"),
                                            enable_screenshot_organization = obs.obs_data_get_bool(settings, "organize_screenshots_bool"))
-
-    print(EVENT_HANDLERS)
     
-    print("(script_update) Updated the settings!\n")
+    log("(script_update) Updated the settings!\n")
 
 
 def script_unload():
