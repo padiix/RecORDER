@@ -396,7 +396,6 @@ def hooked_cb(calldata: object) -> None:
 
 # EVENTS
 
-
 def _handle_recording_start() -> None:
     global globalVariables
     
@@ -512,16 +511,25 @@ def _handle_scene_collection_change() -> None:
         obs.obs_frontend_replay_buffer_stop()
 
 
-EVENT_HANDLERS = {
-    obs.OBS_FRONTEND_EVENT_RECORDING_STARTED: _handle_recording_start,
-    obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED: _handle_recording_stop,
-    obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED: _handle_replay_buffer_start,
-    obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED: _handle_replay_buffer_save,
-    obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED: _handle_replay_buffer_stop,
-    obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN: _handle_screenshot_taken,
-    obs.OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING: _handle_scene_collection_change,
-}
+# EVENT HANDLERS
+
+def _build_event_handlers(enable_replay_organization: bool, enable_screenshot_organization: bool) -> dict:
+    handlers = {
+        obs.OBS_FRONTEND_EVENT_RECORDING_STARTED: _handle_recording_start,
+        obs.OBS_FRONTEND_EVENT_RECORDING_STOPPED: _handle_recording_stop,
+        obs.OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING: _handle_scene_collection_change,
+    }
     
+    if enable_replay_organization:
+        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED] = _handle_replay_buffer_start,
+        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED] = _handle_replay_buffer_save,
+        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED] = _handle_replay_buffer_stop,
+        
+    if enable_screenshot_organization:
+        handlers[obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN] = _handle_screenshot_taken
+        
+    return handlers
+          
     
 def global_event_handler(event: int) -> None:
     """Single dispatcher for all OBS frontend events"""
@@ -560,7 +568,7 @@ def check_if_hooked_and_update_title():
             print("Failed to get title, using default name - restart OBS or captured app.")
             globalVariables.game_title = globalVariables.default_recording_name
         print(f"Current game title: {globalVariables.game_title}")
-    obs.calldata_destroy(calldata)
+
 
 
 def get_hooked(uuid: str) -> object:
@@ -582,7 +590,6 @@ def gh_title(calldata: object) -> str:
 
 # OBS FUNCTIONS
 
-
 def script_load(settings):
     # Loading object of class holding global variables
     global globalVariables
@@ -598,10 +605,16 @@ def script_load(settings):
 
     # Loading in Frontend events
     obs.obs_frontend_add_event_callback(global_event_handler)
+    
 
+def script_defaults(settings):
+    obs.obs_data_set_default_bool(settings, "title_before_bool", False)
+    obs.obs_data_set_default_bool(settings, "organize_replay_bool", True)
+    obs.obs_data_set_default_bool(settings, "organize_screenshots_bool", True)
 
 def script_update(settings):
     global globalVariables
+    global EVENT_HANDLERS
 
     # Loading in settings
     global sett
@@ -610,6 +623,11 @@ def script_update(settings):
     # Fetching the Settings
     globalVariables.apply_config(obs.obs_data_get_bool(settings, "title_before_bool"))
 
+    EVENT_HANDLERS = _build_event_handlers(enable_replay_organization = obs.obs_data_get_bool(settings, "organize_replay_bool"),
+                                           enable_screenshot_organization = obs.obs_data_get_bool(settings, "organize_screenshots_bool"))
+
+    print(EVENT_HANDLERS)
+    
     print("(script_update) Updated the settings!\n")
 
 
@@ -635,15 +653,33 @@ def script_unload():
 def script_properties():
     props = obs.obs_properties_create()
 
+    # Organize replay buffer checkmark
+    organize_replay = obs.obs_properties_add_bool(
+        props, "organize_replay_bool", "Organize Replay Buffer recordings ")
+    obs.obs_property_set_long_description(
+        organize_replay,
+        "Check the box, if you want to have replays organized into subfolders, uncheck to disable"
+    )
+    
+    # Organize screenshots checkmark
+    organize_screenshots = obs.obs_properties_add_bool(
+        props, "organize_screenshots_bool", "Organize screenshots ")
+    obs.obs_property_set_long_description(
+        organize_screenshots,
+        "Check the box, if you want to have screenshots organized into subfolders, uncheck to disable"
+    )
+    
     # Title checkmark
-    bool_p = obs.obs_properties_add_bool(
-        props, "title_before_bool", "Add name of the game as a recording prefix"
+    title_as_prefix = obs.obs_properties_add_bool(
+        props, "title_before_bool", "Add game name as a file prefix "
     )
     obs.obs_property_set_long_description(
-        bool_p,
-        "Check if you want to have name of the application name appended as a prefix to the recording, else uncheck",
+        title_as_prefix,
+        "Check the box, if you want to have title of hooked application appended as a prefix to the recording, else uncheck"
     )
 
+    
+    
     return props
 
 
