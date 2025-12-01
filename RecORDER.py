@@ -43,16 +43,16 @@ class GlobalVariables:
         self._time_to_wait = 0.5
 
         # [Related to RECORDING]
-        self._default_recording_name = "Manual Recording"
         self._is_recording = False
         self._is_replay_active = False
         self._last_recording_path = None
-        self._game_title = self._default_recording_name
         self._source_uuid = None
 
-    def apply_config(self, add_game_title_to_recording_name: bool):
+    def apply_config(self, add_game_title_to_recording_name: bool, default_folder_name: str):
         self._add_game_title_to_recording_name = add_game_title_to_recording_name
-
+        self._default_recording_name = default_folder_name
+        self._game_title = self._default_recording_name
+        
     # ---
 
     @property
@@ -577,7 +577,6 @@ def check_if_hooked_and_update_title():
         log(f"Current game title: {globalVariables.game_title}")
 
 
-
 def get_hooked(uuid: str) -> object:
     source = obs.obs_get_source_by_uuid(uuid)
     cd = obs.calldata_create()
@@ -615,6 +614,7 @@ def script_load(settings):
     
 
 def script_defaults(settings):
+    obs.obs_data_set_default_string(settings, "default_folder_name_text", "Manual Recording")
     obs.obs_data_set_default_bool(settings, "title_before_bool", False)
     obs.obs_data_set_default_bool(settings, "organize_replay_bool", True)
     obs.obs_data_set_default_bool(settings, "organize_screenshots_bool", True)
@@ -628,7 +628,8 @@ def script_update(settings):
     sett = settings
 
     # Fetching the Settings
-    globalVariables.apply_config(obs.obs_data_get_bool(settings, "title_before_bool"))
+    globalVariables.apply_config(obs.obs_data_get_bool(settings, "title_before_bool"), 
+                                 obs.obs_data_get_string(settings, "default_folder_name_text"))
 
     EVENT_HANDLERS = _build_event_handlers(enable_replay_organization = obs.obs_data_get_bool(settings, "organize_replay_bool"),
                                            enable_screenshot_organization = obs.obs_data_get_bool(settings, "organize_screenshots_bool"))
@@ -657,6 +658,10 @@ def script_unload():
     
 def script_properties():
     props = obs.obs_properties_create()
+
+    # Default folder name text input
+    obs.obs_properties_add_text(
+        props, "default_folder_name_text", "Default folder name: ", obs.OBS_TEXT_DEFAULT)
 
     # Organize replay buffer checkmark
     organize_replay = obs.obs_properties_add_bool(
