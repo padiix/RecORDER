@@ -21,7 +21,7 @@ SOURCE_NAMES = ["Game Capture", "Window Capture"]
 
 
 class CONST:
-    VERSION = "2.1"
+    VERSION = "2.1.1"
     PYTHON_VERSION = sys.version_info
 
 
@@ -573,9 +573,9 @@ def _build_event_handlers(enable_replay_organization: bool, enable_screenshot_or
     }
     
     if enable_replay_organization:
-        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED] = _handle_replay_buffer_start,
-        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED] = _handle_replay_buffer_save,
-        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED] = _handle_replay_buffer_stop,
+        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED] = _handle_replay_buffer_start
+        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED] = _handle_replay_buffer_save
+        handlers[obs.OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED] = _handle_replay_buffer_stop
         
     if enable_screenshot_organization:
         handlers[obs.OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN] = _handle_screenshot_taken
