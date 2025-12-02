@@ -161,3 +161,4 @@ cython_debug/
 /.vscode
 *.sha256
 /.idea
+/releases
