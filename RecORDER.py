@@ -43,7 +43,7 @@ def log(message):
     
     
 def get_latest_release_tag() -> dict | None:
-    url = "https://api.github.com/repos/padiix/RecORDER/releases/latest"
+    url = "https://api.github.com/repos/oxypatic/RecORDER/releases/latest"
 
     try:
         with urlopen(url, timeout=2) as response:
